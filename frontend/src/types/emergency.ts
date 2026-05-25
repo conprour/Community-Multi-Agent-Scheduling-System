@@ -1,5 +1,5 @@
 export type EmergencyInputType = 'text' | 'audio' | 'image';
-export type FlowStage = 'idle' | 'intake' | 'routing' | 'completed';
+export type FlowStage = 'idle' | 'intake' | 'clarifying' | 'feedback' | 'routing' | 'completed';
 
 export interface AttachmentMeta {
   name: string;

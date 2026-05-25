@@ -31,3 +31,8 @@ async def upload_files(files: list[UploadFile] = File(...)) -> UploadAttachments
 @router.post("/api/intake/submit", response_model=EmergencyFlowResponse)
 def submit_emergency(payload: EmergencyReportCreate) -> EmergencyFlowResponse:
     return service.handle_report(payload)
+
+
+@router.post("/api/intake/analyze", response_model=EmergencyFlowResponse)
+def analyze_emergency(payload: EmergencyReportCreate) -> EmergencyFlowResponse:
+    return service.handle_report(payload, persist=False)

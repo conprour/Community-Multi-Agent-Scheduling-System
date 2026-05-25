@@ -8,12 +8,21 @@
       <el-tag type="warning" effect="light">{{ store.selectedCase.title }}</el-tag>
     </header>
 
-    <section class="chat-box">
-      <textarea
-        v-model="store.form.description"
-        class="chat-textarea"
-        placeholder="直接描述诉求，例如：我们小区楼下餐馆油烟太大，晚上还很吵，找物业没人管。"
-      />
+    <section class="chat-box" :class="{ highlighted: store.chatHighlighted }">
+      <div class="message-history">
+        <article
+          v-for="message in store.chatMessages"
+          :key="message.id"
+          class="message-bubble"
+          :class="[message.role, message.variant]"
+        >
+          <span class="message-author">{{ message.role === 'user' ? '居民' : '客服' }}</span>
+          <p>{{ message.content }}</p>
+          <div v-if="message.attachments?.length" class="message-files">
+            <span v-for="file in message.attachments" :key="file">{{ file }}</span>
+          </div>
+        </article>
+      </div>
 
       <div v-if="store.pendingFiles.length" class="inline-files">
         <article v-for="(file, index) in store.pendingFiles" :key="file.name + file.size + index" class="inline-file">
@@ -24,60 +33,69 @@
 
       <div v-if="liveTranscript" class="speech-preview">{{ liveTranscript }}</div>
 
-      <div class="composer-toolbar">
-        <div class="composer-tools">
-          <label class="tool-button">
-            <input class="hidden-input" type="file" accept="image/*" multiple @change="handleImageChange" />
-            <span>上传图像</span>
-          </label>
-          <button type="button" class="tool-button" :class="{ active: isListening }" @click="toggleSpeechRecognition">
-            {{ isListening ? '停止识别' : '语音识别' }}
+      <div class="composer-card">
+        <textarea
+          v-model="store.draftMessage"
+          class="chat-textarea"
+          placeholder="继续补充诉求，例如：餐馆叫川香小厨，门牌是 12 号，晚上十点后最吵。"
+          :disabled="store.submitting"
+        />
+
+        <div class="composer-toolbar">
+          <div class="composer-tools">
+            <label class="tool-button">
+              <input class="hidden-input" type="file" accept="image/*" multiple @change="handleImageChange" />
+              <span>上传图像</span>
+            </label>
+            <button type="button" class="tool-button" :class="{ active: isListening }" @click="toggleSpeechRecognition">
+              {{ isListening ? '停止识别' : '语音识别' }}
+            </button>
+          </div>
+
+          <button type="button" class="send-button" :disabled="store.submitting" @click="store.submitCurrentReport()">
+            {{ store.submitting ? '判断中' : '发送' }}
           </button>
         </div>
-
-        <button type="button" class="send-button" :disabled="store.submitting" @click="store.submitCurrentReport()">
-          {{ store.submitting ? '分析中' : '发送' }}
-        </button>
       </div>
     </section>
 
-    <section class="agent-analysis">
+    <section class="agent-analysis" :class="{ highlighted: store.feedbackHighlighted }">
       <div class="analysis-topline">
         <span>受理反馈</span>
         <strong>{{ store.stageLabel }}</strong>
       </div>
       <p class="analysis-notice">{{ store.notice }}</p>
 
-      <template v-if="store.response">
+      <template v-if="feedbackResult">
         <div class="analysis-summary">
-          <span>{{ store.response.demand_package.category }}</span>
+          <span>{{ feedbackResult.demand_package.category }}</span>
           <span>{{ urgencyLabel }}</span>
-          <span>{{ store.response.demand_package.location }}</span>
+          <span>{{ feedbackResult.demand_package.location }}</span>
         </div>
-        <p class="summary-text">{{ store.response.demand_package.summary }}</p>
+        <p class="summary-text">{{ feedbackResult.demand_package.summary }}</p>
         <div class="analysis-grid">
           <article>
-            <strong>{{ store.response.demand_package.requires_immediate_visit ? '立即上门' : '先行核实' }}</strong>
+            <strong>{{ feedbackResult.demand_package.requires_immediate_visit ? '立即上门' : '先行核实' }}</strong>
             <span>处置建议</span>
           </article>
           <article>
-            <strong>{{ store.response.demand_package.risks.length }}</strong>
+            <strong>{{ feedbackResult.demand_package.risks.length }}</strong>
             <span>风险点</span>
           </article>
           <article>
-            <strong>{{ store.response.demand_package.temporary_guidance.length }}</strong>
+            <strong>{{ feedbackResult.demand_package.temporary_guidance.length }}</strong>
             <span>临时建议</span>
           </article>
         </div>
         <ul class="analysis-list">
-          <li v-for="risk in store.response.demand_package.risks" :key="risk">{{ risk }}</li>
+          <li v-for="risk in feedbackResult.demand_package.risks" :key="risk">{{ risk }}</li>
         </ul>
-        <RouterLink class="workbench-link" to="/government">查看政府工作台</RouterLink>
+        <RouterLink v-if="store.response" class="workbench-link" to="/government">查看政府工作台</RouterLink>
       </template>
 
       <template v-else>
         <div class="case-preview">
-          <strong>{{ store.selectedCase.source }} · {{ store.selectedCase.location }}</strong>
+          <strong>{{ store.selectedCase.source }} · {{ store.selectedCase.communityName }}</strong>
           <p>{{ store.selectedCase.brief }}</p>
           <div class="tag-row">
             <span v-for="tag in store.selectedCase.tags" :key="tag">{{ tag }}</span>
@@ -125,8 +143,9 @@ const isListening = ref(false);
 const liveTranscript = ref('');
 let recognition: SpeechRecognitionLike | null = null;
 
+const feedbackResult = computed(() => store.feedbackResult);
 const urgencyLabel = computed(() => {
-  const urgency = store.response?.demand_package.urgency;
+  const urgency = feedbackResult.value?.demand_package.urgency;
   if (urgency === 'high') {
     return '高紧急度';
   }
@@ -209,7 +228,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .left-panel {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .compact-header {
@@ -217,23 +236,103 @@ onBeforeUnmount(() => {
 }
 
 .chat-box {
+  min-height: 520px;
   display: grid;
+  grid-template-rows: 1fr auto;
   gap: 12px;
   padding: 16px;
   border-radius: 24px;
   background: linear-gradient(180deg, rgba(255, 251, 246, 0.96), rgba(242, 249, 250, 0.9));
   border: 1px solid rgba(211, 225, 231, 0.9);
+  transition: border-color 0.24s ease, box-shadow 0.24s ease, transform 0.24s ease;
+}
+
+.chat-box.highlighted {
+  border-color: rgba(235, 127, 56, 0.76);
+  box-shadow: 0 0 0 3px rgba(235, 127, 56, 0.13), 0 18px 34px rgba(235, 127, 56, 0.12);
+}
+
+.message-history {
+  max-height: 330px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 4px;
+}
+
+.message-bubble {
+  max-width: 88%;
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(210, 223, 230, 0.72);
+}
+
+.message-bubble.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(255, 226, 205, 0.96), rgba(255, 246, 239, 0.96));
+  border-color: rgba(238, 154, 91, 0.38);
+}
+
+.message-bubble.agent {
+  align-self: flex-start;
+}
+
+.message-bubble.question {
+  border-color: rgba(235, 127, 56, 0.48);
+  background: rgba(255, 244, 233, 0.96);
+}
+
+.message-bubble.success {
+  border-color: rgba(31, 138, 151, 0.38);
+  background: rgba(235, 247, 248, 0.96);
+}
+
+.message-author {
+  color: rgba(61, 84, 95, 0.68);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.message-bubble p {
+  margin: 0;
+  color: #17313d;
+  line-height: 1.65;
+}
+
+.message-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.message-files span {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(237, 244, 247, 0.86);
+  color: rgba(54, 82, 94, 0.78);
+  font-size: 12px;
+}
+
+.composer-card {
+  display: grid;
+  gap: 10px;
+  border-radius: 18px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(210, 223, 230, 0.78);
 }
 
 .chat-textarea {
   width: 100%;
-  min-height: 190px;
+  min-height: 88px;
   resize: vertical;
   border: none;
   outline: none;
-  background: rgba(255, 255, 255, 0.72);
-  border-radius: 18px;
-  padding: 16px;
+  background: transparent;
   color: #17313d;
   font: inherit;
   line-height: 1.7;
@@ -274,8 +373,8 @@ onBeforeUnmount(() => {
 .tool-button {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
-  padding: 8px 13px;
+  min-height: 34px;
+  padding: 7px 12px;
   border-radius: 999px;
   background: rgba(236, 128, 60, 0.12);
   color: #cf641e;
@@ -287,8 +386,8 @@ onBeforeUnmount(() => {
 }
 
 .send-button {
-  min-height: 38px;
-  padding: 9px 18px;
+  min-height: 36px;
+  padding: 8px 17px;
   border-radius: 999px;
   color: #fff;
   background: linear-gradient(135deg, #f08c46, #df6827);
@@ -332,14 +431,21 @@ onBeforeUnmount(() => {
 }
 
 .agent-analysis {
-  min-height: 360px;
+  min-height: 250px;
   display: grid;
   align-content: start;
-  gap: 14px;
+  gap: 12px;
   border-radius: 24px;
-  padding: 20px;
-  background: linear-gradient(180deg, rgba(255, 222, 197, 0.62), rgba(255, 248, 241, 0.92));
-  border: 1px solid rgba(239, 171, 119, 0.46);
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(255, 222, 197, 0.44), rgba(255, 248, 241, 0.88));
+  border: 1px solid rgba(239, 171, 119, 0.32);
+  transition: border-color 0.24s ease, box-shadow 0.24s ease, transform 0.24s ease;
+}
+
+.agent-analysis.highlighted {
+  border-color: rgba(31, 138, 151, 0.62);
+  box-shadow: 0 0 0 3px rgba(31, 138, 151, 0.12), 0 16px 30px rgba(31, 138, 151, 0.1);
+  transform: translateY(-1px);
 }
 
 .analysis-topline {
@@ -384,7 +490,7 @@ onBeforeUnmount(() => {
 }
 
 .analysis-grid article {
-  padding: 13px;
+  padding: 12px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.58);
 }

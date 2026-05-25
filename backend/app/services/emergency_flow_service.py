@@ -30,7 +30,7 @@ class EmergencyFlowService:
         catalog = self._load_catalog()
         return len(catalog)
 
-    def handle_report(self, payload: EmergencyReportCreate) -> EmergencyFlowResponse:
+    def handle_report(self, payload: EmergencyReportCreate, persist: bool = True) -> EmergencyFlowResponse:
         created_at = datetime.now()
         request_id = f"req-{created_at.strftime('%Y%m%d%H%M%S')}-{uuid4().hex[:6]}"
         ai_insight = self.bailian_client.analyze_report(payload)
@@ -75,7 +75,7 @@ class EmergencyFlowService:
             impact_scope=impact_scope,
             risks=risks,
             requires_immediate_visit=requires_immediate_visit,
-            missing_fields=self._detect_missing_fields(resolved_location),
+            missing_fields=self._detect_missing_fields(resolved_location, effective_description),
             suggested_questions=suggested_questions,
             temporary_guidance=temporary_guidance,
         )
@@ -118,8 +118,9 @@ class EmergencyFlowService:
             service_order=service_order,
         )
 
-        self._persist_request(request_id, payload, response)
-        self._persist_order(order_id, request_id, response)
+        if persist:
+            self._persist_request(request_id, payload, response)
+            self._persist_order(order_id, request_id, response)
 
         return response
 
@@ -148,6 +149,17 @@ class EmergencyFlowService:
         return f"已识别为{category}，核心描述：{short_description}"
 
     def _resolve_location(self, location: str, description: str) -> str:
+        if any(token in f"{location} {description}" for token in ["底商", "餐馆", "餐厅", "饭店", "商铺", "油烟", "噪声"]):
+            doorplate = re.search(r"(?:门牌号?[:：]?\s*)?\d+号(?:门店|商铺|店)?", description)
+            shop_name = re.search(
+                r"[\u4e00-\u9fa5A-Za-z0-9#-]{2,18}(?:小厨|餐厅|饭店|烧烤|面馆|火锅店|便利店|超市)",
+                description,
+            )
+            business_detail = doorplate.group(0) if doorplate else shop_name.group(0) if shop_name else ""
+            business_detail = re.sub(r"^(?:我们小区楼下|小区楼下|楼下|附近的?|这家|叫|名叫)", "", business_detail)
+            if business_detail and business_detail not in location:
+                return f"{location} {business_detail}"
+
         location_tokens = ["栋", "单元", "楼", "层", "号"]
         if any(token in location for token in location_tokens):
             return location
@@ -158,10 +170,13 @@ class EmergencyFlowService:
         )
         return match.group(0) if match else location
 
-    def _detect_missing_fields(self, location: str) -> list[str]:
+    def _detect_missing_fields(self, location: str, description: str) -> list[str]:
         missing_fields: list[str] = []
-        if any(token in location for token in ["底商", "餐馆", "商铺"]):
-            if not any(token in location for token in ["号", "门牌", "餐馆", "店"]):
+        combined_text = f"{location} {description}"
+        if any(token in combined_text for token in ["底商", "餐馆", "餐厅", "饭店", "商铺", "油烟", "噪声"]):
+            has_business_detail = any(token in combined_text for token in ["号", "门牌", "店名", "名称"])
+            has_named_shop = bool(re.search(r"[\u4e00-\u9fa5A-Za-z0-9#-]{2,18}(?:小厨|餐厅|饭店|烧烤|面馆|火锅店|便利店|超市)", combined_text))
+            if not has_business_detail and not has_named_shop:
                 missing_fields.append("餐馆名称或门牌号")
             return missing_fields
 

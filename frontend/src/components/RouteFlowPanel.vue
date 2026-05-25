@@ -1,5 +1,5 @@
 <template>
-  <section class="panel card-panel route-panel">
+  <section class="panel card-panel route-panel" :class="{ highlighted: store.flowStage === 'routing' }">
     <header class="panel-header">
       <div>
         <p class="eyebrow">智能调度可视区</p>
@@ -59,7 +59,7 @@ const stageRank = computed(() => {
   if (store.flowStage === 'routing') {
     return 2;
   }
-  if (store.flowStage === 'intake') {
+  if (store.flowStage === 'feedback') {
     return 1;
   }
   return 0;
@@ -68,11 +68,11 @@ const stageRank = computed(() => {
 const nodes = computed<Node[]>(() => {
   const demandNodes = store.demandCases.map((caseItem, index) => ({
     id: `demand-${caseItem.id}`,
-    label: `${caseItem.title}\n${caseItem.source}`,
+    label: `${caseItem.source}\n${caseItem.communityName}`,
     position: { x: 0, y: 34 + index * 92 },
     sourcePosition: Position.Right,
     class: caseItem.id === store.selectedCaseId ? 'demand-node active' : 'demand-node',
-    data: { label: `${caseItem.title}\n${caseItem.source}` },
+    data: { label: `${caseItem.source}\n${caseItem.communityName}` },
   }));
 
   const supplyNodeList = store.supplyNodes.map((supply, index) => ({
@@ -92,7 +92,7 @@ const nodes = computed<Node[]>(() => {
       position: { x: 318, y: 172 },
       sourcePosition: Position.Right,
       targetPosition: Position.Left,
-      class: stageRank.value >= 1 ? 'agent-node active' : 'agent-node',
+      class: store.routeActivated ? 'agent-node active' : 'agent-node',
       data: { label: '诉求路由\nAgent' },
     },
     ...supplyNodeList,
@@ -105,7 +105,7 @@ const edges = computed<Edge[]>(() => {
       `edge-${caseItem.id}-agent`,
       `demand-${caseItem.id}`,
       'route-agent',
-      caseItem.id === store.selectedCaseId && stageRank.value >= 1,
+      caseItem.id === store.selectedCaseId && store.routeActivated,
     ),
   );
 
@@ -128,10 +128,16 @@ const decisionText = computed(() => {
   if (store.flowStage === 'routing') {
     return 'Agent 正在将左侧需求节点连接到右侧供给节点，生成工单和服务建议。';
   }
-  if (store.flowStage === 'intake') {
-    return '诉求接受 Agent 正在解析对话框内容，提取位置、类型、紧急度和风险。';
+  if (store.flowStage === 'feedback') {
+    return '受理反馈已生成，下一步将进入诉求路由 Agent。';
   }
-  return '点击任一需求端节点会同步填充左侧对话框和 Agent 初始分析。';
+  if (store.flowStage === 'clarifying') {
+    return '客服正在等待居民确认或继续更新信息，路由暂不启动。';
+  }
+  if (store.flowStage === 'intake') {
+    return '客服正在整理当前诉求，并生成确认话术。';
+  }
+  return '点击任一居民节点会把一句话诉求预填到左侧发送框。';
 });
 
 watch(
@@ -177,6 +183,13 @@ function createEdge(id: string, source: string, target: string, active: boolean)
 .route-panel {
   display: grid;
   gap: 16px;
+  transition: border-color 0.24s ease, box-shadow 0.24s ease, transform 0.24s ease;
+}
+
+.route-panel.highlighted {
+  border-color: rgba(235, 127, 56, 0.62);
+  box-shadow: 0 0 0 3px rgba(235, 127, 56, 0.12), 0 24px 42px rgba(235, 127, 56, 0.12);
+  transform: translateY(-1px);
 }
 
 .status-badge {

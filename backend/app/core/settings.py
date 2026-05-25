@@ -37,7 +37,7 @@ def get_settings() -> Settings:
         app_name="Community Multi Agent Scheduling System API",
         api_prefix="/api",
         cors_origins=_parse_origins(
-            os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+            os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174")
         ),
         project_root=project_root,
         data_dir=data_dir,

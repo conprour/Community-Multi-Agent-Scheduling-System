@@ -11,6 +11,14 @@
       <RouterLink class="nav-link" to="/">群众提交端</RouterLink>
     </section>
 
+    <section v-if="store.workOrderUpdated" class="work-order-reminder">
+      <div>
+        <span>新工单已同步</span>
+        <strong>{{ store.response?.service_order.order_id }}</strong>
+      </div>
+      <p>{{ store.response?.routing_decision.responsible_unit }} 需确认派单与协办部门。</p>
+    </section>
+
     <section class="government-grid">
       <RightServicePanel />
       <section class="department-summary card-panel">
@@ -45,7 +53,7 @@ const summaryTitle = computed(() => {
 
 const summaryText = computed(() => {
   if (!store.response) {
-    return '当前展示政府部门侧的合成看板数据。群众端提交后，标准工单、协办部门和缺字段提示会同步出现在这里。';
+    return '当前展示政府部门侧的合成看板数据。群众端确认后，标准工单、协办部门和人工确认提示会同步出现在这里。';
   }
   return `系统已生成 ${store.response.service_order.order_id}，建议由坐席补齐缺失字段后再进入正式派单。`;
 });
@@ -62,7 +70,7 @@ const summaryItems = computed(() => {
   return [
     `主办部门：${store.response.routing_decision.responsible_unit}`,
     `协办部门：${store.response.routing_decision.backup_units.join('、')}`,
-    `待补信息：${store.response.demand_package.missing_fields.join('、') || '无'}`,
+    `人工确认提示：${store.response.demand_package.missing_fields.join('、') || '已由群众确认'}`,
   ];
 });
 </script>
@@ -73,6 +81,39 @@ const summaryItems = computed(() => {
   grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1.1fr);
   gap: 20px;
   align-items: start;
+}
+
+.work-order-reminder {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255, 226, 205, 0.96), rgba(237, 249, 250, 0.96));
+  border: 1px solid rgba(235, 127, 56, 0.42);
+  box-shadow: 0 16px 30px rgba(235, 127, 56, 0.12);
+}
+
+.work-order-reminder div {
+  display: grid;
+  gap: 4px;
+}
+
+.work-order-reminder span {
+  color: #d56722;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.work-order-reminder strong {
+  color: #17313d;
+}
+
+.work-order-reminder p {
+  margin: 0;
+  color: rgba(52, 75, 87, 0.86);
 }
 
 .department-summary {
@@ -108,6 +149,11 @@ const summaryItems = computed(() => {
 @media (max-width: 1280px) {
   .government-grid {
     grid-template-columns: 1fr;
+  }
+
+  .work-order-reminder {
+    align-items: start;
+    flex-direction: column;
   }
 }
 </style>
