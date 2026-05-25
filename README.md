@@ -13,6 +13,7 @@
 - 左侧对话框集成文本输入、图像上传和浏览器实时语音识别按钮
 - 中间可视区支持点击需求端节点切换案例，并展示“需求节点 -> 诉求路由 Agent -> 供给节点”的动态派发
 - 政府工作台展示标准工单、主协办部门、待补字段、部门负载、重复投诉、超时预警和治理建议
+- 新增部门管理分析端：管理人员提出公共服务问题，后端生成 50 条模拟群众诉求，并展示 Agent 分析过程与数据看板
 - 接口异常时前端回退本地 mock
 
 ## 目录结构
@@ -63,6 +64,10 @@ npm run dev
 前端默认地址：
 
 - `http://127.0.0.1:5173`
+- 群众诉求链路：`http://127.0.0.1:5173/`
+- 政府工单工作台：`http://127.0.0.1:5173/government`
+- 部门管理分析端：`http://127.0.0.1:5173/management`
+- 管理分析数据看板：`http://127.0.0.1:5173/management/dashboard`
 
 ## 环境变量
 
@@ -80,10 +85,13 @@ npm run dev
 - `GET /health`
 - `POST /api/uploads`
 - `POST /api/intake/submit`
+- `POST /api/management/analyze`
 
 `POST /api/intake/submit` 可直接使用 `data/requests/sample_restaurant_fume_noise.json` 中的样例报文进行测试，也保留了 `data/requests/sample_water_pipe_burst.json` 作为旧场景样例。
 
 `POST /api/uploads` 用于先上传图片或音频，再将返回的 `attachments` 数组带入 `POST /api/intake/submit`。前端对话框会自动完成这一步。
+
+`POST /api/management/analyze` 用于部门管理问题分析，例如“夏天中暑情况增多，我应该如何分配医疗资源？”。后端会解析问题、生成 50 条模拟诉求，并返回时空聚合、地区标注、类别图表和资源配置建议。
 
 ## 已验证
 

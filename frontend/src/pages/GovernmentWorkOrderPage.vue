@@ -8,7 +8,10 @@
           面向街道、社区和承办部门，集中查看标准工单、主协办建议、人工确认提示和部门数据看板。
         </p>
       </div>
-      <RouterLink class="nav-link" to="/">群众提交端</RouterLink>
+      <div class="hero-links">
+        <RouterLink class="nav-link" to="/">群众提交端</RouterLink>
+        <RouterLink class="nav-link secondary-link" to="/management">管理分析端</RouterLink>
+      </div>
     </section>
 
     <section class="government-grid">
@@ -73,6 +76,17 @@ const summaryItems = computed(() => {
   grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1.1fr);
   gap: 20px;
   align-items: start;
+}
+
+.hero-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.secondary-link {
+  background: linear-gradient(135deg, #3c8fa0, #246f7e);
 }
 
 .department-summary {
