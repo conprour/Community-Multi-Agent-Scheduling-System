@@ -3,25 +3,25 @@
     <section class="hero-band">
       <div class="hero-content">
         <div>
-          <p class="eyebrow">急事办调度中枢</p>
-          <h1>把“小急事”做得更快</h1>
+          <p class="eyebrow">民生诉求 AI 调度中枢</p>
+          <h1>把群众一句话变成可督办工单</h1>
           <p class="hero-copy">
-            第一版聚焦“水管爆了怎么办”，从居民报事、结构化提取、责任链路由到工单服务信息生成，先跑通一个真正可演示的闭环。
+            面向社区接诉即办与 12345，展示“群众一句话 → 多 Agent 研判 → 标准工单 → 主协办派单 → 人工确认 → 治理看板”的完整闭环。
           </p>
         </div>
 
         <div class="hero-kpis">
           <article>
-            <strong>3</strong>
-            <span>输入模态</span>
+            <strong>8</strong>
+            <span>协作 Agent</span>
           </article>
           <article>
-            <strong>20 分钟</strong>
-            <span>主案例预计到场</span>
+            <strong>2 小时</strong>
+            <span>主案例核查派单</span>
           </article>
           <article>
-            <strong>百炼增强</strong>
-            <span>文本 / 图像 / 语音</span>
+            <strong>治理看板</strong>
+            <span>热点 / 重复 / 超时</span>
           </article>
         </div>
       </div>
@@ -32,10 +32,13 @@
       <RouteFlowPanel />
       <RightServicePanel />
     </section>
+
+    <GovernmentInsightPanel />
   </main>
 </template>
 
 <script setup lang="ts">
+import GovernmentInsightPanel from '@/components/GovernmentInsightPanel.vue';
 import LeftReportPanel from '@/components/LeftReportPanel.vue';
 import RightServicePanel from '@/components/RightServicePanel.vue';
 import RouteFlowPanel from '@/components/RouteFlowPanel.vue';
@@ -88,5 +91,9 @@ import RouteFlowPanel from '@/components/RouteFlowPanel.vue';
   .hero-content {
     grid-template-columns: 1fr;
   }
+}
+
+:deep(.governance-panel) {
+  margin-top: 22px;
 }
 </style>

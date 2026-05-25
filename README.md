@@ -1,13 +1,14 @@
 # Community-Multi-Agent-Scheduling-System
 
-面向社区“急事办”场景的多智能体调度 demo，第一版聚焦“水管爆了怎么办”这类高频急事，演示从居民报事、需求结构化、责任匹配到工单与服务信息生成的完整闭环。
+面向社区接诉即办与 12345 热线的轻量多智能体治理 demo，主案例聚焦“餐饮油烟 + 夜间噪声 + 物业协调失败”这类高频复合诉求，演示从群众一句话、结构化抽取、多 Agent 研判、主协办派单、人工确认到政府侧治理看板的完整闭环。
 
 ## 当前实现
 
 - Vue 3 + Vite 前端三栏主页面，已做明亮化工作台视觉改造
 - FastAPI 后端最小接口
 - 基于 `data/` 目录的 JSON 文件存储
-- “水管爆裂”主案例样例数据与规则模板
+- “餐饮油烟与夜间噪声扰民”主案例样例数据与规则模板
+- 政府侧治理看板：今日概览、类别占比、热点区域、部门负载、重复投诉、超时风险和 AI 专项治理建议
 - 阿里云百炼 `qwen3.6-plus` 文本/图像增强已接入主链路
 - 阿里云百炼 `fun-asr-realtime-2026-02-28` 语音识别已接入后端能力层
 - 前端支持图片、音频文件上传；接口异常时回退本地 mock
@@ -78,7 +79,7 @@ npm run dev
 - `POST /api/uploads`
 - `POST /api/intake/submit`
 
-`POST /api/intake/submit` 可直接使用 `data/requests/sample_water_pipe_burst.json` 中的样例报文进行测试。
+`POST /api/intake/submit` 可直接使用 `data/requests/sample_restaurant_fume_noise.json` 中的样例报文进行测试，也保留了 `data/requests/sample_water_pipe_burst.json` 作为旧场景样例。
 
 `POST /api/uploads` 用于先上传图片或音频，再将返回的 `attachments` 数组带入 `POST /api/intake/submit`。
 

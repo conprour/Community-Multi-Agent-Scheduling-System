@@ -18,27 +18,27 @@ export const useEmergencyStore = defineStore('emergency', () => {
   const submitting = ref(false);
   const useMockData = ref(false);
   const pendingFiles = ref<File[]>([]);
-  const notice = ref('主案例已预置为“水管爆了怎么办”，可直接提交体验完整流转。');
+  const notice = ref('主案例已预置为“餐饮油烟与夜间噪声扰民”，可直接提交体验接诉即办闭环。');
   const hasPendingFiles = computed(() => pendingFiles.value.length > 0);
 
   const stageLabel = computed(() => {
     if (flowStage.value === 'intake') {
-      return '诉求接受 Agent 正在提取需求信息';
+      return '受理 Agent 正在提取诉求要素';
     }
     if (flowStage.value === 'routing') {
-      return '诉求排序与发放 Agent 正在匹配责任单位';
+      return '多 Agent 正在研判去重与派单路径';
     }
     if (flowStage.value === 'completed') {
-      return '工单和服务信息已生成';
+      return '标准工单与治理看板已更新';
     }
-    return '等待居民报事';
+    return '等待群众诉求';
   });
 
   async function submitCurrentReport() {
     submitting.value = true;
     response.value = null;
     useMockData.value = false;
-    notice.value = '开始处理当前急事，请稍候。';
+    notice.value = '开始处理当前诉求，请稍候。';
     flowStage.value = 'intake';
 
     let result: EmergencyFlowResponse;
@@ -71,13 +71,13 @@ export const useEmergencyStore = defineStore('emergency', () => {
     flowStage.value = 'idle';
     useMockData.value = false;
     pendingFiles.value = [];
-    notice.value = '主案例已恢复为默认样例，可继续调整后再次提交。';
+    notice.value = '主案例已恢复为默认接诉即办样例，可继续调整后再次提交。';
   }
 
   function setPendingFiles(files: File[]) {
     pendingFiles.value = files;
     if (files.length > 0) {
-      notice.value = `已选择 ${files.length} 个附件，提交后会先上传再进入急事解析。`;
+      notice.value = `已选择 ${files.length} 个附件，提交后会先上传再进入诉求解析。`;
     }
   }
 

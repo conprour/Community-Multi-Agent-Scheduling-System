@@ -2,8 +2,8 @@
   <section class="panel card-panel route-panel">
     <header class="panel-header">
       <div>
-        <p class="eyebrow">责任链路由</p>
-        <h2>智能调度可视区</h2>
+        <p class="eyebrow">多 Agent 研判</p>
+        <h2>可审计调度链路</h2>
       </div>
       <span class="status-badge" ref="badgeRef">{{ store.stageLabel }}</span>
     </header>
@@ -57,37 +57,37 @@ const stageRank = computed(() => {
 const nodes = computed<Node[]>(() => [
   {
     id: 'citizen',
-    label: '居民报事',
+    label: '群众诉求',
     position: { x: 0, y: 130 },
     sourcePosition: Position.Right,
     class: stageRank.value >= 1 ? 'flow-node active' : 'flow-node',
-    data: { label: '居民报事' },
+    data: { label: '群众诉求' },
   },
   {
     id: 'intake',
-    label: '诉求接受 Agent',
+    label: '受理 Agent',
     position: { x: 210, y: 130 },
     sourcePosition: Position.Right,
     targetPosition: Position.Left,
     class: stageRank.value >= 1 ? 'flow-node active intake' : 'flow-node intake',
-    data: { label: '诉求接受 Agent' },
+    data: { label: '受理 Agent' },
   },
   {
     id: 'routing',
-    label: '排序与发放 Agent',
+    label: '去重与路由 Agent',
     position: { x: 460, y: 130 },
     sourcePosition: Position.Right,
     targetPosition: Position.Left,
     class: stageRank.value >= 2 ? 'flow-node active route' : 'flow-node route',
-    data: { label: '排序与发放 Agent' },
+    data: { label: '去重与路由 Agent' },
   },
   {
     id: 'service',
-    label: store.response?.routing_decision.responsible_unit ?? '责任单位',
+    label: store.response?.routing_decision.responsible_unit ?? '主协办部门',
     position: { x: 720, y: 130 },
     targetPosition: Position.Left,
     class: stageRank.value >= 3 ? 'flow-node active service' : 'flow-node service',
-    data: { label: store.response?.routing_decision.responsible_unit ?? '责任单位' },
+    data: { label: store.response?.routing_decision.responsible_unit ?? '主协办部门' },
   },
 ]);
 
@@ -109,29 +109,29 @@ const steps = computed(() => {
     {
       key: 'step-report',
       index: '01',
-      title: '报事已接收',
-      description: '定位楼栋、楼层、风险和描述内容。',
+      title: '诉求已接收',
+      description: '抽取地点、时间、问题和影响对象。',
       state: states[0],
     },
     {
       key: 'step-intake',
       index: '02',
-      title: '需求结构化',
-      description: '提取类别、紧急度、影响范围和缺失字段。',
+      title: '分类与风险研判',
+      description: '识别油烟、噪声、物业协调和优先级。',
       state: states[1],
     },
     {
       key: 'step-routing',
       index: '03',
-      title: '责任匹配',
-      description: '根据规则优先匹配责任单位和值班岗位。',
+      title: '去重与责任匹配',
+      description: '关联相似投诉，推荐主办和协办部门。',
       state: states[2],
     },
     {
       key: 'step-service',
       index: '04',
-      title: '生成服务安排',
-      description: '输出预计到场时间、处理动作和协同要求。',
+      title: '监督审计入库',
+      description: '低置信度与跨部门事项进入人工确认。',
       state: states[3],
     },
   ];
@@ -139,28 +139,28 @@ const steps = computed(() => {
 
 const decisionTitle = computed(() => {
   if (store.flowStage === 'routing') {
-    return '正在匹配责任单位';
+    return '正在匹配主协办部门';
   }
   if (store.flowStage === 'completed') {
-    return '责任链路已生成';
+    return '调度链路已生成';
   }
   if (store.flowStage === 'intake') {
-    return '正在识别急事特征';
+    return '正在识别诉求特征';
   }
-  return '等待提交急事';
+  return '等待提交诉求';
 });
 
 const decisionText = computed(() => {
   if (store.flowStage === 'routing') {
-    return '系统正在根据问题类型、位置和风险等级筛选责任单位。';
+    return '系统正在根据问题类型、位置、重复风险和职责清单筛选主协办部门。';
   }
   if (store.flowStage === 'completed' && store.response) {
     return `已匹配：${store.response.routing_decision.responsible_unit}，${store.response.routing_decision.service_sla}。`;
   }
   if (store.flowStage === 'intake') {
-    return '正在从文本、语音或图像输入中提取结构化需求信息。';
+    return '正在从文本、语音或图像输入中提取结构化诉求信息。';
   }
-  return '主案例已预置，可直接点击左侧按钮体验完整路由。';
+  return '主案例已预置，可直接点击左侧按钮体验完整接诉即办链路。';
 });
 
 watch(

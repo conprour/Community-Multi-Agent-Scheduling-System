@@ -47,7 +47,7 @@ a {
   margin: 8px 0 0;
   font-size: clamp(28px, 4vw, 44px);
   line-height: 1.1;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   color: #16303b;
 }
 

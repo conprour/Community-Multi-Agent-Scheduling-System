@@ -2,15 +2,15 @@
   <section class="panel card-panel left-panel">
     <header class="panel-header">
       <div>
-        <p class="eyebrow">居民报事区</p>
-        <h2>急事输入</h2>
+        <p class="eyebrow">群众诉求区</p>
+        <h2>12345 接诉输入</h2>
       </div>
       <el-tag type="danger" effect="dark">主案例</el-tag>
     </header>
 
     <el-form label-position="top" class="report-form">
-      <el-form-item label="报事人">
-        <el-input v-model="store.form.reporter_name" placeholder="例如：张阿姨" />
+      <el-form-item label="诉求人">
+        <el-input v-model="store.form.reporter_name" placeholder="例如：李女士" />
       </el-form-item>
 
       <el-form-item label="联系方式">
@@ -18,7 +18,7 @@
       </el-form-item>
 
       <el-form-item label="发生位置">
-        <el-input v-model="store.form.location" placeholder="例如：2栋3单元4楼电梯口" />
+        <el-input v-model="store.form.location" placeholder="例如：中关村街道知春里社区 A 区底商" />
       </el-form-item>
 
       <el-form-item label="输入方式">
@@ -32,7 +32,7 @@
       <section class="mode-tips">
         <div class="mode-tip-card" :class="{ active: store.form.input_type === 'text' }">
           <strong>文本</strong>
-          <span>适合快速描述位置、风险和诉求经过。</span>
+        <span>适合快速描述地点、商户、时间段和诉求经过。</span>
         </div>
         <div class="mode-tip-card" :class="{ active: store.form.input_type === 'audio' }">
           <strong>语音</strong>
@@ -44,7 +44,7 @@
         </div>
       </section>
 
-      <el-form-item label="急事描述">
+      <el-form-item label="诉求描述">
         <el-input
           v-model="store.form.description"
           type="textarea"
@@ -83,14 +83,14 @@
 
     <div class="panel-actions">
       <el-button type="primary" :loading="store.submitting" @click="store.submitCurrentReport()">
-        提交急事
+        提交诉求
       </el-button>
       <el-button plain @click="store.resetDemo()">恢复默认案例</el-button>
     </div>
 
     <section class="insight-card">
       <div class="insight-topline">
-        <span>诉求接受 Agent</span>
+      <span>受理 Agent</span>
         <strong>{{ store.stageLabel }}</strong>
       </div>
       <p class="insight-notice">{{ store.notice }}</p>
@@ -132,7 +132,7 @@ import { computed } from 'vue';
 import { useEmergencyStore } from '@/stores/emergency';
 
 const store = useEmergencyStore();
-const presetTags = ['漏水', '紧急', '夜间', '公共区域', '电梯附近'];
+const presetTags = ['油烟扰民', '夜间噪声', '物业协调', '重复投诉', '多部门协同'];
 
 const acceptedTypes = computed(() => {
   if (store.form.input_type === 'audio') {
@@ -151,7 +151,7 @@ const descriptionPlaceholder = computed(() => {
   if (store.form.input_type === 'image') {
     return '可补充图片背景说明，或直接上传现场照片。';
   }
-  return '请描述具体发生了什么、在哪儿、是否影响电梯或电路。';
+  return '请描述具体发生了什么、在哪儿、涉及哪些商户或部门。';
 });
 
 const uploadLabel = computed(() => {
