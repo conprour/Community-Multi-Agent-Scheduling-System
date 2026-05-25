@@ -6,7 +6,10 @@
         <h1>{{ result?.topic ?? '等待分析结果' }}</h1>
         <p>{{ result?.answer ?? '请先在管理分析端提交问题，系统会检索 50 条相关群众诉求并汇总成时空和图表看板。' }}</p>
       </div>
-      <RouterLink class="nav-link" to="/management">返回分析过程</RouterLink>
+      <div class="hero-links">
+        <RouterLink class="nav-link" to="/management">返回分析过程</RouterLink>
+        <RouterLink class="nav-link secondary-link" to="/">返回首页</RouterLink>
+      </div>
     </section>
 
     <template v-if="result">
@@ -184,6 +187,17 @@ function regionTop(latitude: number, index: number) {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
   margin-top: 20px;
+}
+
+.hero-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.secondary-link {
+  background: linear-gradient(135deg, #3c8fa0, #246f7e);
 }
 
 .chart-panel {

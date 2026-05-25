@@ -3,6 +3,7 @@ import type { EmergencyFlowResponse, EmergencyReportCreate } from '@/types/emerg
 export function createWaterPipeDemoPayload(): EmergencyReportCreate {
   return {
     reporter_name: '李女士',
+    community_name: '知春里社区 A 区',
     contact: '13800000000',
     location: '中关村街道知春里社区 A 区底商',
     description: '我们小区楼下餐馆油烟太大，晚上还很吵，找物业没人管。',
@@ -15,6 +16,8 @@ export function createWaterPipeDemoPayload(): EmergencyReportCreate {
 export function buildMockResponse(payload: EmergencyReportCreate): EmergencyFlowResponse {
   const now = new Date();
   const stamp = now.toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+  const missingFields = detectMockMissingFields(payload);
+  const communityName = payload.community_name || '本小区';
 
   return {
     request_id: `req-${stamp}-mock01`,
@@ -27,13 +30,13 @@ export function buildMockResponse(payload: EmergencyReportCreate): EmergencyFlow
       impact_scope: '底商周边住户与夜间休息环境',
       risks: ['同一片区近 7 日存在相似投诉', '涉及城管、生态环境、市场监管、社区多方协同', '夜间噪声与油烟持续影响满意度'],
       requires_immediate_visit: false,
-      missing_fields: ['餐馆名称或门牌号'],
+      missing_fields: missingFields,
       suggested_questions: ['请补充餐馆名称、门牌号和主要扰民时段。'],
       temporary_guidance: ['建议保留油烟、噪声发生时段的照片或录音。', '坐席可先生成预工单，待地址补充后进入正式派单。'],
     },
     routing_decision: {
       scenario_code: 'restaurant_fume_noise',
-      responsible_unit: '属地街道综合执法队',
+      responsible_unit: `${communityName}属地街道综合执法队`,
       responsible_role: '接诉即办调度员',
       backup_units: ['生态环境部门', '市场监管所', '知春里社区居委会', '物业公司'],
       eta_minutes: 120,
@@ -48,4 +51,11 @@ export function buildMockResponse(payload: EmergencyReportCreate): EmergencyFlow
       notes: ['监督审计提示：不允许全自动派单，需要人工确认地址信息', '当前为本地 mock 结果，可继续联调后端接口'],
     },
   };
+}
+
+function detectMockMissingFields(payload: EmergencyReportCreate) {
+  const combinedText = `${payload.location} ${payload.description}`;
+  const hasBusinessDetail = ['号', '门牌', '店名', '名称'].some((token) => combinedText.includes(token));
+  const hasNamedShop = /[\u4e00-\u9fa5A-Za-z0-9#-]{2,18}(?:小厨|餐厅|饭店|烧烤|面馆|火锅店|便利店|超市)/.test(combinedText);
+  return hasBusinessDetail || hasNamedShop ? [] : ['餐馆名称或门牌号'];
 }

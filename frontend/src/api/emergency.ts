@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import type { EmergencyFlowResponse, EmergencyReportCreate, UploadAttachmentsResponse } from '@/types/emergency';
+import type { ConfirmationIntentResponse, EmergencyFlowResponse, EmergencyReportCreate, UploadAttachmentsResponse } from '@/types/emergency';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000',
@@ -8,7 +8,12 @@ const apiClient = axios.create({
 });
 
 export async function submitEmergency(payload: EmergencyReportCreate): Promise<EmergencyFlowResponse> {
-  const { data } = await apiClient.post<EmergencyFlowResponse>('/api/intake/submit', payload);
+  const { data } = await apiClient.post<EmergencyFlowResponse>('/api/intake/submit', payload, { timeout: 20000 });
+  return data;
+}
+
+export async function analyzeEmergency(payload: EmergencyReportCreate): Promise<EmergencyFlowResponse> {
+  const { data } = await apiClient.post<EmergencyFlowResponse>('/api/intake/analyze', payload, { timeout: 20000 });
   return data;
 }
 
@@ -23,5 +28,10 @@ export async function uploadAttachments(files: File[]): Promise<UploadAttachment
     timeout: 20000,
   });
 
+  return data;
+}
+
+export async function detectConfirmationIntent(text: string): Promise<ConfirmationIntentResponse> {
+  const { data } = await apiClient.post<ConfirmationIntentResponse>('/api/intake/confirm-intent', { text }, { timeout: 3500 });
   return data;
 }

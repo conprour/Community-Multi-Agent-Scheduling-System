@@ -8,7 +8,7 @@
           部门管理人员输入公共服务问题，系统检索 50 条相关群众诉求，Agent 展示“问题理解 - 数据检索 - 时空分析 - 形成答案”的动态过程。
         </p>
       </div>
-      <RouterLink class="nav-link" to="/">群众诉求链路</RouterLink>
+      <RouterLink class="nav-link" to="/">返回首页</RouterLink>
     </section>
 
     <section class="management-grid">

@@ -18,12 +18,23 @@ class UploadAttachmentsResponse(BaseModel):
 
 class EmergencyReportCreate(BaseModel):
     reporter_name: str = Field(default="匿名居民", max_length=50)
+    community_name: str | None = Field(default=None, max_length=80)
     contact: str | None = Field(default=None, max_length=50)
     location: str = Field(default="待识别位置", min_length=2, description="楼栋、单元、楼层等位置说明")
     description: str = Field(default="", description="居民描述的急事内容")
     input_type: Literal["text", "audio", "image"] = "text"
     tags: list[str] = Field(default_factory=list)
     attachments: list[AttachmentMeta] = Field(default_factory=list)
+
+
+class ConfirmationIntentRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=120)
+
+
+class ConfirmationIntentResponse(BaseModel):
+    confirmed: bool
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    source: Literal["rule", "model", "fallback"] = "fallback"
 
 
 class BailianEmergencyInsight(BaseModel):
