@@ -8,7 +8,12 @@ const apiClient = axios.create({
 });
 
 export async function submitEmergency(payload: EmergencyReportCreate): Promise<EmergencyFlowResponse> {
-  const { data } = await apiClient.post<EmergencyFlowResponse>('/api/intake/submit', payload);
+  const { data } = await apiClient.post<EmergencyFlowResponse>('/api/intake/submit', payload, { timeout: 20000 });
+  return data;
+}
+
+export async function analyzeEmergency(payload: EmergencyReportCreate): Promise<EmergencyFlowResponse> {
+  const { data } = await apiClient.post<EmergencyFlowResponse>('/api/intake/analyze', payload, { timeout: 20000 });
   return data;
 }
 

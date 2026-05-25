@@ -1,5 +1,5 @@
 <template>
-  <section class="panel card-panel right-panel">
+  <section class="panel card-panel right-panel" :class="{ updated: store.workOrderUpdated }">
     <header class="panel-header">
       <div>
         <p class="eyebrow">派单确认</p>
@@ -96,6 +96,12 @@ const combinedNotes = computed(() => {
 .right-panel {
   display: grid;
   gap: 16px;
+  transition: border-color 0.24s ease, box-shadow 0.24s ease;
+}
+
+.right-panel.updated {
+  border-color: rgba(31, 138, 151, 0.5);
+  box-shadow: 0 0 0 3px rgba(31, 138, 151, 0.1), 0 24px 42px rgba(31, 138, 151, 0.1);
 }
 
 .service-card {
