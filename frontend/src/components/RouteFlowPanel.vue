@@ -2,30 +2,41 @@
   <section class="panel card-panel route-panel">
     <header class="panel-header">
       <div>
-        <p class="eyebrow">责任链路由</p>
-        <h2>智能调度可视区</h2>
+        <p class="eyebrow">智能调度可视区</p>
+        <h2>诉求路由 Agent</h2>
       </div>
       <span class="status-badge" ref="badgeRef">{{ store.stageLabel }}</span>
     </header>
 
-    <div class="flow-shell" ref="shellRef">
-      <VueFlow :nodes="nodes" :edges="edges" fit-view class="flow-canvas" />
+    <div class="route-map" ref="shellRef">
+      <VueFlow :nodes="nodes" :edges="edges" fit-view class="flow-canvas" @node-click="handleNodeClick" />
     </div>
 
-    <div class="route-bubble" ref="bubbleRef">
-      <strong>{{ decisionTitle }}</strong>
+    <section class="route-explain" ref="bubbleRef">
+      <div>
+        <span>当前需求</span>
+        <strong>{{ store.selectedCase.title }}</strong>
+      </div>
       <p>{{ decisionText }}</p>
-    </div>
+    </section>
 
-    <div class="flow-steps">
-      <article v-for="step in steps" :key="step.key" class="flow-step" :class="step.state">
-        <span>{{ step.index }}</span>
-        <div>
-          <h3>{{ step.title }}</h3>
-          <p>{{ step.description }}</p>
-        </div>
+    <section class="dispatch-strip">
+      <article :class="{ active: stageRank >= 1 }">
+        <span>01</span>
+        <strong>需求端案例</strong>
+        <p>点击左侧节点切换诉求样例。</p>
       </article>
-    </div>
+      <article :class="{ active: stageRank >= 2 }">
+        <span>02</span>
+        <strong>Agent 分析</strong>
+        <p>从对话、图像或语音中抽取风险。</p>
+      </article>
+      <article :class="{ active: stageRank >= 3 }">
+        <span>03</span>
+        <strong>供给侧派发</strong>
+        <p>生成责任单位、工单和服务信息。</p>
+      </article>
+    </section>
   </section>
 </template>
 
@@ -54,131 +65,98 @@ const stageRank = computed(() => {
   return 0;
 });
 
-const nodes = computed<Node[]>(() => [
-  {
-    id: 'citizen',
-    label: '居民报事',
-    position: { x: 0, y: 130 },
+const nodes = computed<Node[]>(() => {
+  const demandNodes = store.demandCases.map((caseItem, index) => ({
+    id: `demand-${caseItem.id}`,
+    label: `${caseItem.title}\n${caseItem.source}`,
+    position: { x: 0, y: 34 + index * 92 },
     sourcePosition: Position.Right,
-    class: stageRank.value >= 1 ? 'flow-node active' : 'flow-node',
-    data: { label: '居民报事' },
-  },
-  {
-    id: 'intake',
-    label: '诉求接受 Agent',
-    position: { x: 210, y: 130 },
-    sourcePosition: Position.Right,
-    targetPosition: Position.Left,
-    class: stageRank.value >= 1 ? 'flow-node active intake' : 'flow-node intake',
-    data: { label: '诉求接受 Agent' },
-  },
-  {
-    id: 'routing',
-    label: '排序与发放 Agent',
-    position: { x: 460, y: 130 },
-    sourcePosition: Position.Right,
-    targetPosition: Position.Left,
-    class: stageRank.value >= 2 ? 'flow-node active route' : 'flow-node route',
-    data: { label: '排序与发放 Agent' },
-  },
-  {
-    id: 'service',
-    label: store.response?.routing_decision.responsible_unit ?? '责任单位',
-    position: { x: 720, y: 130 },
-    targetPosition: Position.Left,
-    class: stageRank.value >= 3 ? 'flow-node active service' : 'flow-node service',
-    data: { label: store.response?.routing_decision.responsible_unit ?? '责任单位' },
-  },
-]);
+    class: caseItem.id === store.selectedCaseId ? 'demand-node active' : 'demand-node',
+    data: { label: `${caseItem.title}\n${caseItem.source}` },
+  }));
 
-const edges = computed<Edge[]>(() => [
-  createEdge('e1', 'citizen', 'intake', stageRank.value >= 1),
-  createEdge('e2', 'intake', 'routing', stageRank.value >= 2),
-  createEdge('e3', 'routing', 'service', stageRank.value >= 3),
-]);
-
-const steps = computed(() => {
-  const states = [
-    stageRank.value >= 1 ? 'done' : 'idle',
-    stageRank.value >= 1 ? 'active' : 'idle',
-    stageRank.value >= 2 ? 'active' : 'idle',
-    stageRank.value >= 3 ? 'done' : 'idle',
-  ];
+  const supplyNodeList = store.supplyNodes.map((supply, index) => ({
+    id: `supply-${supply.id}`,
+    label: `${supply.title}\n${supply.unit}`,
+    position: { x: 640, y: 34 + index * 92 },
+    targetPosition: Position.Left,
+    class: supply.id === store.activeSupplyId && store.routeActivated ? 'supply-node active' : 'supply-node',
+    data: { label: `${supply.title}\n${supply.unit}` },
+  }));
 
   return [
+    ...demandNodes,
     {
-      key: 'step-report',
-      index: '01',
-      title: '报事已接收',
-      description: '定位楼栋、楼层、风险和描述内容。',
-      state: states[0],
+      id: 'route-agent',
+      label: '诉求路由\nAgent',
+      position: { x: 318, y: 172 },
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
+      class: stageRank.value >= 1 ? 'agent-node active' : 'agent-node',
+      data: { label: '诉求路由\nAgent' },
     },
-    {
-      key: 'step-intake',
-      index: '02',
-      title: '需求结构化',
-      description: '提取类别、紧急度、影响范围和缺失字段。',
-      state: states[1],
-    },
-    {
-      key: 'step-routing',
-      index: '03',
-      title: '责任匹配',
-      description: '根据规则优先匹配责任单位和值班岗位。',
-      state: states[2],
-    },
-    {
-      key: 'step-service',
-      index: '04',
-      title: '生成服务安排',
-      description: '输出预计到场时间、处理动作和协同要求。',
-      state: states[3],
-    },
+    ...supplyNodeList,
   ];
 });
 
-const decisionTitle = computed(() => {
-  if (store.flowStage === 'routing') {
-    return '正在匹配责任单位';
-  }
-  if (store.flowStage === 'completed') {
-    return '责任链路已生成';
-  }
-  if (store.flowStage === 'intake') {
-    return '正在识别急事特征';
-  }
-  return '等待提交急事';
+const edges = computed<Edge[]>(() => {
+  const demandEdges = store.demandCases.map((caseItem) =>
+    createEdge(
+      `edge-${caseItem.id}-agent`,
+      `demand-${caseItem.id}`,
+      'route-agent',
+      caseItem.id === store.selectedCaseId && stageRank.value >= 1,
+    ),
+  );
+
+  const supplyEdges = store.supplyNodes.map((supply) =>
+    createEdge(
+      `edge-agent-${supply.id}`,
+      'route-agent',
+      `supply-${supply.id}`,
+      supply.id === store.activeSupplyId && store.routeActivated,
+    ),
+  );
+
+  return [...demandEdges, ...supplyEdges];
 });
 
 const decisionText = computed(() => {
-  if (store.flowStage === 'routing') {
-    return '系统正在根据问题类型、位置和风险等级筛选责任单位。';
-  }
   if (store.flowStage === 'completed' && store.response) {
-    return `已匹配：${store.response.routing_decision.responsible_unit}，${store.response.routing_decision.service_sla}。`;
+    return `已派发至 ${store.response.routing_decision.responsible_unit}，${store.response.routing_decision.service_sla}。`;
+  }
+  if (store.flowStage === 'routing') {
+    return 'Agent 正在将左侧需求节点连接到右侧供给节点，生成工单和服务建议。';
   }
   if (store.flowStage === 'intake') {
-    return '正在从文本、语音或图像输入中提取结构化需求信息。';
+    return '诉求接受 Agent 正在解析对话框内容，提取位置、类型、紧急度和风险。';
   }
-  return '主案例已预置，可直接点击左侧按钮体验完整路由。';
+  return '点击任一需求端节点会同步填充左侧对话框和 Agent 初始分析。';
 });
 
 watch(
-  () => store.flowStage,
+  () => [store.flowStage, store.selectedCaseId],
   async () => {
     await nextTick();
     if (badgeRef.value) {
-      gsap.fromTo(badgeRef.value, { opacity: 0.2, y: 8 }, { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' });
+      gsap.fromTo(badgeRef.value, { opacity: 0.2, y: 8 }, { opacity: 1, y: 0, duration: 0.32, ease: 'power2.out' });
     }
     if (bubbleRef.value) {
-      gsap.fromTo(bubbleRef.value, { opacity: 0.3, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' });
+      gsap.fromTo(bubbleRef.value, { opacity: 0.25, y: 12 }, { opacity: 1, y: 0, duration: 0.38, ease: 'power2.out' });
     }
     if (shellRef.value) {
-      gsap.fromTo(shellRef.value, { scale: 0.985 }, { scale: 1, duration: 0.3, ease: 'power2.out' });
+      gsap.fromTo(shellRef.value, { scale: 0.99 }, { scale: 1, duration: 0.28, ease: 'power2.out' });
     }
   },
   { immediate: true },
 );
+
+function handleNodeClick(event: { node: Node }) {
+  const nodeId = event.node.id;
+  if (nodeId.startsWith('demand-')) {
+    store.selectDemandCase(nodeId.replace('demand-', ''));
+  }
+}
 
 function createEdge(id: string, source: string, target: string, active: boolean): Edge {
   return {
@@ -188,8 +166,8 @@ function createEdge(id: string, source: string, target: string, active: boolean)
     animated: active,
     markerEnd: MarkerType.ArrowClosed,
     style: {
-      stroke: active ? '#ff8a34' : 'rgba(111, 139, 160, 0.45)',
-      strokeWidth: active ? '3' : '2',
+      stroke: active ? '#e9752f' : 'rgba(126, 154, 166, 0.34)',
+      strokeWidth: active ? '3' : '1.8',
     },
   };
 }
@@ -198,7 +176,7 @@ function createEdge(id: string, source: string, target: string, active: boolean)
 <style scoped>
 .route-panel {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .status-badge {
@@ -211,112 +189,127 @@ function createEdge(id: string, source: string, target: string, active: boolean)
   font-size: 12px;
 }
 
-.flow-shell {
-  min-height: 320px;
+.route-map {
+  min-height: 520px;
   border-radius: 24px;
   overflow: hidden;
   background:
-    radial-gradient(circle at top, rgba(255, 173, 120, 0.35), transparent 42%),
-    linear-gradient(180deg, rgba(255, 251, 246, 0.96), rgba(238, 246, 247, 0.92));
-  border: 1px solid rgba(212, 225, 230, 0.92);
+    linear-gradient(90deg, rgba(255, 248, 240, 0.95), rgba(239, 247, 248, 0.98) 48%, rgba(255, 251, 246, 0.95)),
+    radial-gradient(circle at center, rgba(238, 132, 65, 0.2), transparent 28%);
+  border: 1px solid rgba(211, 225, 231, 0.9);
 }
 
 .flow-canvas {
-  height: 320px;
+  height: 520px;
 }
 
-.route-bubble {
+.route-explain {
+  display: grid;
+  gap: 8px;
   padding: 16px 18px;
   border-radius: 18px;
   background: linear-gradient(135deg, rgba(255, 243, 232, 0.94), rgba(241, 247, 248, 0.96));
   border: 1px solid rgba(210, 223, 230, 0.95);
 }
 
-.route-bubble strong {
-  display: block;
-  font-size: 15px;
-  color: #203640;
+.route-explain div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: rgba(67, 91, 103, 0.76);
+  font-size: 13px;
 }
 
-.route-bubble p {
-  margin: 8px 0 0;
-  color: rgba(52, 76, 88, 0.82);
+.route-explain strong {
+  color: #17313d;
+}
+
+.route-explain p {
+  margin: 0;
+  color: rgba(52, 76, 88, 0.84);
   line-height: 1.7;
 }
 
-.flow-steps {
+.dispatch-strip {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.flow-step {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 14px;
-  padding: 16px;
+.dispatch-strip article {
+  padding: 14px;
   border-radius: 18px;
-  background: rgba(252, 253, 253, 0.9);
-  border: 1px solid rgba(214, 226, 230, 0.9);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(213, 225, 231, 0.86);
 }
 
-.flow-step span {
-  width: 42px;
-  height: 42px;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 50%;
-  background: rgba(240, 246, 247, 0.92);
-  color: rgba(65, 92, 103, 0.86);
+.dispatch-strip article.active {
+  border-color: rgba(235, 127, 56, 0.46);
+  box-shadow: inset 0 0 0 1px rgba(235, 127, 56, 0.12);
+}
+
+.dispatch-strip span,
+.dispatch-strip strong {
+  display: block;
+}
+
+.dispatch-strip span {
+  color: #df6f2b;
   font-size: 12px;
 }
 
-.flow-step h3,
-.flow-step p {
-  margin: 0;
-}
-
-.flow-step h3 {
-  font-size: 15px;
-  color: #17303a;
-}
-
-.flow-step p {
+.dispatch-strip strong {
   margin-top: 6px;
-  color: rgba(63, 88, 99, 0.76);
+  color: #17313d;
+}
+
+.dispatch-strip p {
+  margin: 6px 0 0;
+  color: rgba(61, 87, 99, 0.74);
   line-height: 1.6;
-}
-
-.flow-step.active {
-  border-color: rgba(255, 145, 77, 0.34);
-  box-shadow: inset 0 0 0 1px rgba(255, 145, 77, 0.14);
-}
-
-.flow-step.done span,
-.flow-step.active span {
-  background: linear-gradient(135deg, #ff9f55, #ff6e29);
-  color: #fff;
+  font-size: 13px;
 }
 
 :deep(.vue-flow__node) {
-  width: 180px;
+  white-space: pre-line;
+  width: 178px;
+  min-height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   border-radius: 18px;
   border: 1px solid rgba(213, 225, 231, 0.98);
   background: rgba(255, 255, 255, 0.94);
   color: #16323b;
   box-shadow: none;
-  padding: 14px 16px;
+  padding: 12px 14px;
   font-weight: 600;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+:deep(.vue-flow__node.agent-node) {
+  width: 190px;
+  min-height: 120px;
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(255, 211, 181, 0.96), rgba(255, 248, 242, 0.98));
+  border-color: rgba(235, 127, 56, 0.42);
+  font-size: 18px;
 }
 
 :deep(.vue-flow__node.active) {
-  border-color: rgba(255, 144, 77, 0.48);
-  box-shadow: 0 16px 30px rgba(255, 128, 52, 0.14);
+  border-color: rgba(235, 127, 56, 0.62);
+  box-shadow: 0 16px 30px rgba(235, 127, 56, 0.14);
+}
+
+:deep(.vue-flow__node.supply-node.active) {
+  border-color: rgba(31, 138, 151, 0.48);
+  box-shadow: 0 16px 30px rgba(31, 138, 151, 0.12);
 }
 
 @media (max-width: 900px) {
-  .flow-steps {
+  .dispatch-strip {
     grid-template-columns: 1fr;
   }
 }

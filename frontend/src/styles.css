@@ -36,31 +36,12 @@ a {
 
 .dashboard-shell {
   min-height: 100vh;
-  padding: 28px;
-}
-
-.hero-band {
-  padding: 12px 2px 24px;
-}
-
-.hero-band h1 {
-  margin: 8px 0 0;
-  font-size: clamp(28px, 4vw, 44px);
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-  color: #16303b;
-}
-
-.hero-copy {
-  max-width: 720px;
-  margin: 14px 0 0;
-  color: var(--text-secondary);
-  line-height: 1.8;
+  padding: 22px;
 }
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(320px, 1.02fr) minmax(420px, 1.18fr) minmax(320px, 0.98fr);
+  grid-template-columns: minmax(320px, 0.92fr) minmax(560px, 1.38fr) minmax(320px, 0.92fr);
   gap: 20px;
   align-items: start;
 }
@@ -100,10 +81,6 @@ a {
 @media (max-width: 1280px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
-  }
-
-  .hero-band {
-    padding-top: 0;
   }
 }
 
