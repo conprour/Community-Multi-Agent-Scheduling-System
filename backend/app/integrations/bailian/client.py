@@ -32,6 +32,8 @@ class BailianClient:
             transcript = self._transcribe_primary_audio(payload)
 
         effective_description = transcript or payload.description.strip()
+        if not effective_description and self._build_image_parts(payload):
+            effective_description = "用户上传了现场图片，请结合图片判断社区急事类型、风险和处置建议。"
         if not effective_description:
             return None
 

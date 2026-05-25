@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from uuid import uuid4
 
@@ -33,7 +34,10 @@ class EmergencyFlowService:
         created_at = datetime.now()
         request_id = f"req-{created_at.strftime('%Y%m%d%H%M%S')}-{uuid4().hex[:6]}"
         ai_insight = self.bailian_client.analyze_report(payload)
-        effective_description = ai_insight.transcript if ai_insight and ai_insight.transcript else payload.description
+        effective_description = ai_insight.transcript if ai_insight and ai_insight.transcript else payload.description.strip()
+        if not effective_description:
+            effective_description = "用户通过对话框提交了图片或语音材料，需结合附件判断急事类型。"
+        resolved_location = self._resolve_location(payload.location, effective_description)
         scenario_code = self._detect_scenario(
             effective_description,
             payload.tags,
@@ -66,12 +70,12 @@ class EmergencyFlowService:
         demand_package = DemandPackage(
             summary=summary,
             category=category,
-            location=payload.location,
+            location=resolved_location,
             urgency=urgency,
             impact_scope=impact_scope,
             risks=risks,
             requires_immediate_visit=requires_immediate_visit,
-            missing_fields=self._detect_missing_fields(payload),
+            missing_fields=self._detect_missing_fields(resolved_location),
             suggested_questions=suggested_questions,
             temporary_guidance=temporary_guidance,
         )
@@ -101,7 +105,7 @@ class EmergencyFlowService:
         service_order = ServiceOrder(
             order_id=order_id,
             status="待派发",
-            service_location=payload.location,
+            service_location=resolved_location,
             service_actions=scenario["service_order"]["service_actions"],
             notes=notes,
         )
@@ -140,13 +144,22 @@ class EmergencyFlowService:
             short_description = f"{short_description[:36]}..."
         return f"已识别为{category}，核心描述：{short_description}"
 
-    def _detect_missing_fields(self, payload: EmergencyReportCreate) -> list[str]:
+    def _resolve_location(self, location: str, description: str) -> str:
+        location_tokens = ["栋", "单元", "楼", "层", "号"]
+        if any(token in location for token in location_tokens):
+            return location
+
+        match = re.search(
+            r"[\u4e00-\u9fa5A-Za-z0-9#-]*\d+栋(?:\d+单元)?(?:\d+(?:楼|层))?(?:电梯口|楼道|门口|附近)?",
+            description,
+        )
+        return match.group(0) if match else location
+
+    def _detect_missing_fields(self, location: str) -> list[str]:
         missing_fields: list[str] = []
         location_tokens = ["栋", "单元", "楼", "层", "号"]
-        if not any(token in payload.location for token in location_tokens):
+        if not any(token in location for token in location_tokens):
             missing_fields.append("楼栋或楼层信息")
-        if not payload.contact:
-            missing_fields.append("联系方式")
         return missing_fields
 
     def _persist_request(

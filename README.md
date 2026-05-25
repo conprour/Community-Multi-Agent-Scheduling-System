@@ -4,13 +4,15 @@
 
 ## 当前实现
 
-- Vue 3 + Vite 前端三栏主页面，已做明亮化工作台视觉改造
+- Vue 3 + Vite 前端三栏主页面，已按“对话输入 / 路由 Agent / 服务信息”重构
 - FastAPI 后端最小接口
 - 基于 `data/` 目录的 JSON 文件存储
 - “水管爆裂”主案例样例数据与规则模板
 - 阿里云百炼 `qwen3.6-plus` 文本/图像增强已接入主链路
 - 阿里云百炼 `fun-asr-realtime-2026-02-28` 语音识别已接入后端能力层
-- 前端支持图片、音频文件上传；接口异常时回退本地 mock
+- 左侧对话框集成文本输入、图像上传和浏览器实时语音识别按钮
+- 中间可视区支持点击需求端节点切换案例，并展示“需求节点 -> 诉求路由 Agent -> 供给节点”的动态派发
+- 接口异常时前端回退本地 mock
 
 ## 目录结构
 
@@ -80,11 +82,12 @@ npm run dev
 
 `POST /api/intake/submit` 可直接使用 `data/requests/sample_water_pipe_burst.json` 中的样例报文进行测试。
 
-`POST /api/uploads` 用于先上传图片或音频，再将返回的 `attachments` 数组带入 `POST /api/intake/submit`。
+`POST /api/uploads` 用于先上传图片或音频，再将返回的 `attachments` 数组带入 `POST /api/intake/submit`。前端对话框会自动完成这一步。
 
 ## 已验证
 
 - 后端在 `cinemind` 环境下已完成依赖安装与 FastAPI 导入校验
 - 文本主案例已通过真实百炼增强链路测试
 - 上传接口已通过图片上传到主链路的联调测试
+- 简化对话式 payload 已通过后端 TestClient 校验
 - 前端已完成 `npm run build` 构建验证

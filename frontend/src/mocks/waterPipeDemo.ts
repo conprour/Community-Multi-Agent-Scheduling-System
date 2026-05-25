@@ -27,7 +27,7 @@ export function buildMockResponse(payload: EmergencyReportCreate): EmergencyFlow
       impact_scope: '楼栋公共区域及周边住户',
       risks: ['可能影响电梯井和公共电路', '积水区域存在滑倒风险', '需要尽快关闭阀门控制外溢'],
       requires_immediate_visit: true,
-      missing_fields: payload.contact ? [] : ['联系方式'],
+      missing_fields: [],
       suggested_questions: ['积水是否已经蔓延到电梯口或配电区域？'],
       temporary_guidance: ['远离电梯口和插座附近的积水区域', '如知道阀门位置，可先尝试关闭就近阀门'],
     },
