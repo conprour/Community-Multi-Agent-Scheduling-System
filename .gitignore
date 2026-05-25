@@ -32,6 +32,8 @@ logs/
 data/uploads/
 data/runtime/
 data/cache/
+data/orders/order-*.json
+data/requests/req-*.json
 temp/
 tmp/
 

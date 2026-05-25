@@ -27,7 +27,7 @@ export function buildMockResponse(payload: EmergencyReportCreate): EmergencyFlow
       impact_scope: '底商周边住户与夜间休息环境',
       risks: ['同一片区近 7 日存在相似投诉', '涉及城管、生态环境、市场监管、社区多方协同', '夜间噪声与油烟持续影响满意度'],
       requires_immediate_visit: false,
-      missing_fields: payload.contact ? ['餐馆名称或门牌号'] : ['联系方式', '餐馆名称或门牌号'],
+      missing_fields: ['餐馆名称或门牌号'],
       suggested_questions: ['请补充餐馆名称、门牌号和主要扰民时段。'],
       temporary_guidance: ['建议保留油烟、噪声发生时段的照片或录音。', '坐席可先生成预工单，待地址补充后进入正式派单。'],
     },
@@ -45,7 +45,7 @@ export function buildMockResponse(payload: EmergencyReportCreate): EmergencyFlow
       status: '待派发',
       service_location: payload.location,
       service_actions: ['联系投诉人补充餐馆名称、门牌号和扰民时段', '安排夜间现场核查油烟净化设施和噪声情况', '同步市场监管核查经营资质并要求物业配合提供商户信息'],
-      notes: ['监督审计 Agent 判定：不允许全自动派单，需要人工确认地址信息', '当前为本地 mock 结果，可继续联调后端接口'],
+      notes: ['监督审计提示：不允许全自动派单，需要人工确认地址信息', '当前为本地 mock 结果，可继续联调后端接口'],
     },
   };
 }

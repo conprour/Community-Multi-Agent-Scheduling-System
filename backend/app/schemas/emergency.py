@@ -19,8 +19,8 @@ class UploadAttachmentsResponse(BaseModel):
 class EmergencyReportCreate(BaseModel):
     reporter_name: str = Field(default="匿名居民", max_length=50)
     contact: str | None = Field(default=None, max_length=50)
-    location: str = Field(..., min_length=2, description="社区、小区、商户或楼栋等位置说明")
-    description: str = Field(..., min_length=5, description="群众描述的民生诉求内容")
+    location: str = Field(default="待识别位置", min_length=2, description="楼栋、单元、楼层等位置说明")
+    description: str = Field(default="", description="居民描述的急事内容")
     input_type: Literal["text", "audio", "image"] = "text"
     tags: list[str] = Field(default_factory=list)
     attachments: list[AttachmentMeta] = Field(default_factory=list)

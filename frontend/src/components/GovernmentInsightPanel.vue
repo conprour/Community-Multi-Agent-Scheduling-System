@@ -2,11 +2,11 @@
   <section class="governance-panel">
     <header class="governance-header">
       <div>
-        <p class="eyebrow">政府侧治理看板</p>
-        <h2>从个案派单到主动治理</h2>
+        <p class="eyebrow">政府部门数据看板</p>
+        <h2>接诉即办运行汇总</h2>
       </div>
       <div class="report-status">
-        <span>今日汇总</span>
+        <span>数据口径</span>
         <strong>{{ store.response ? '已纳入最新诉求' : '演示数据待更新' }}</strong>
       </div>
     </header>
@@ -89,7 +89,7 @@
 
     <section class="summary-band">
       <div>
-        <p class="eyebrow">AI 专项治理建议</p>
+        <p class="eyebrow">部门协同建议</p>
         <h3>{{ summaryTitle }}</h3>
         <p>{{ summaryText }}</p>
       </div>
@@ -109,22 +109,22 @@ const store = useEmergencyStore();
 
 const overviewMetrics = computed(() => [
   {
-    label: '今日诉求',
+    label: '今日受理',
     value: store.response ? '128' : '127',
     detail: store.response ? '较演示前 +1 件' : '合成历史工单',
   },
   {
-    label: '已派单',
+    label: '已转派',
     value: '96',
     detail: '首派准确率 87%',
   },
   {
-    label: '待人工确认',
+    label: '待坐席确认',
     value: store.response ? '18' : '17',
     detail: '跨部门或缺字段',
   },
   {
-    label: '超时风险',
+    label: '超时预警',
     value: '9',
     detail: '红色 2 / 黄色 7',
   },
@@ -177,7 +177,7 @@ const riskAlerts = [
 const governanceActions = [
   '由街道牵头建立“餐饮油烟 + 夜间噪声”专项台账。',
   '对重复投诉商户安排城管、生态环境、市场监管联合核查。',
-  '将缺少门牌号的诉求保留人工确认，避免 AI 黑箱派单。',
+  '将缺少门牌号的诉求保留坐席确认，避免错误派单。',
   '每周输出热点社区、重复投诉和部门负载三类治理摘要。',
 ];
 
