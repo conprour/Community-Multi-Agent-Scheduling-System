@@ -9,6 +9,7 @@ export interface AttachmentMeta {
 
 export interface EmergencyReportCreate {
   reporter_name: string;
+  community_name?: string | null;
   contact?: string | null;
   location: string;
   description: string;
@@ -58,4 +59,14 @@ export interface EmergencyFlowResponse {
 
 export interface UploadAttachmentsResponse {
   attachments: AttachmentMeta[];
+}
+
+export interface ConfirmationIntentRequest {
+  text: string;
+}
+
+export interface ConfirmationIntentResponse {
+  confirmed: boolean;
+  confidence: number;
+  source: 'rule' | 'model' | 'fallback';
 }

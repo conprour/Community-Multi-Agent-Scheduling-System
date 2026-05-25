@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { computed, reactive, ref } from 'vue';
 
-import { analyzeEmergency, submitEmergency, uploadAttachments } from '@/api/emergency';
+import { analyzeEmergency, detectConfirmationIntent, submitEmergency, uploadAttachments } from '@/api/emergency';
 import { buildMockResponse } from '@/mocks/waterPipeDemo';
 import type { AttachmentMeta, EmergencyFlowResponse, EmergencyReportCreate, FlowStage } from '@/types/emergency';
 
@@ -107,6 +107,7 @@ function delay(ms: number) {
 function buildPayload(caseItem: DemandCase): EmergencyReportCreate {
   return {
     reporter_name: caseItem.source,
+    community_name: caseItem.communityName,
     contact: null,
     location: caseItem.location,
     description: caseItem.description,
@@ -144,16 +145,34 @@ function inferInputType(files: File[], currentType: EmergencyReportCreate['input
   return currentType;
 }
 
-function buildConfirmationMessage(result: EmergencyFlowResponse) {
-  return `你现在遇到的是“${result.demand_package.summary}”。我将为你提交到${result.routing_decision.responsible_unit}，同步生成政府工作台工单，并保留${result.routing_decision.backup_units.join('、')}作为协办参考。确认吗？`;
+function normalizeCommunityText(text: string, communityName: string) {
+  return text.split('XX小区').join(communityName);
 }
 
-function isConfirmationText(text: string) {
-  const normalizedText = text.trim();
-  if (!normalizedText || /不|不是|不用|取消|等等|重新|修改|补充|改/.test(normalizedText)) {
+function buildConfirmationMessage(result: EmergencyFlowResponse, communityName: string) {
+  const summary = normalizeCommunityText(result.demand_package.summary, communityName);
+  const responsibleUnit = normalizeCommunityText(result.routing_decision.responsible_unit, communityName);
+  return `你现在遇到的是“${summary}”。我将为你在${communityName}生成诉求工单，并派发给${responsibleUnit}处理。确认吗？`;
+}
+
+function inferConfirmationByRule(text: string): boolean | null {
+  const normalizedText = text.trim().replace(/[\s，。！？!?,.；;：:、]+/g, '');
+  if (!normalizedText) {
     return false;
   }
-  return /^(确认|是|是的|对|对的|好的|可以|没问题|同意|提交|确认提交|继续)$/.test(normalizedText);
+  if (/不确认|不是|不用|取消|等等|重新|修改|补充|先别|有误|错了/.test(normalizedText)) {
+    return false;
+  }
+  if (/^(我)?(确认|确定|同意|认可|接受)(了|啦|的)?$/.test(normalizedText)) {
+    return true;
+  }
+  if (/^(是|是的|对|对的|好的|可以|没问题|继续|提交|确认提交)$/.test(normalizedText)) {
+    return true;
+  }
+  if (normalizedText.includes('确认') && /我|可以|已经|就这样|信息|工单/.test(normalizedText)) {
+    return true;
+  }
+  return null;
 }
 
 export const useEmergencyStore = defineStore('emergency', () => {
@@ -168,6 +187,8 @@ export const useEmergencyStore = defineStore('emergency', () => {
   const draftMessage = ref('');
   const chatMessages = ref<ChatMessage[]>([]);
   const pendingPayload = ref<EmergencyReportCreate | null>(null);
+  const workOrderConfirmed = ref(false);
+  const workOrderConfirmationNotice = ref(false);
   const notice = ref('请在对话框补充或发送诉求，客服会先复述并等待确认。');
 
   const selectedCase = computed(() => demandCases.find((item) => item.id === selectedCaseId.value) ?? demandCases[0]);
@@ -202,10 +223,10 @@ export const useEmergencyStore = defineStore('emergency', () => {
       return '受理反馈已生成';
     }
     if (flowStage.value === 'routing') {
-      return '正在流转至政府侧工作台';
+      return '正在生成右侧工单';
     }
     if (flowStage.value === 'completed') {
-      return '已提交，政府侧工单已更新';
+      return '右侧工单已生成';
     }
     return '等待输入或选择案例';
   });
@@ -222,7 +243,7 @@ export const useEmergencyStore = defineStore('emergency', () => {
       return;
     }
 
-    if (isWaitingForConfirmation && isConfirmationText(text)) {
+    if (isWaitingForConfirmation && filesForMessage.length === 0 && await resolveConfirmationIntent(text)) {
       chatMessages.value.push(createChatMessage('user', text));
       draftMessage.value = '';
       pendingFiles.value = [];
@@ -249,6 +270,8 @@ export const useEmergencyStore = defineStore('emergency', () => {
     response.value = null;
     intakePreview.value = null;
     pendingPayload.value = null;
+    workOrderConfirmed.value = false;
+    workOrderConfirmationNotice.value = false;
     useMockData.value = false;
     notice.value = '客服正在整理诉求并生成确认话术。';
     flowStage.value = 'intake';
@@ -271,7 +294,7 @@ export const useEmergencyStore = defineStore('emergency', () => {
       pendingPayload.value = payload;
       flowStage.value = 'clarifying';
       notice.value = '客服已整理当前诉求，请确认或继续补充信息。';
-      chatMessages.value.push(createChatMessage('agent', buildConfirmationMessage(analysis), { variant: 'question' }));
+      chatMessages.value.push(createChatMessage('agent', buildConfirmationMessage(analysis, selectedCase.value.communityName), { variant: 'question' }));
     } catch {
       const payload = buildCurrentPayload(description, location, inputType, attachments);
       const fallback = buildMockResponse(payload);
@@ -280,7 +303,7 @@ export const useEmergencyStore = defineStore('emergency', () => {
       pendingPayload.value = payload;
       flowStage.value = 'clarifying';
       notice.value = '后端暂不可用，已用本地规则整理确认话术。';
-      chatMessages.value.push(createChatMessage('agent', buildConfirmationMessage(fallback), { variant: 'question' }));
+      chatMessages.value.push(createChatMessage('agent', buildConfirmationMessage(fallback, selectedCase.value.communityName), { variant: 'question' }));
     } finally {
       submitting.value = false;
     }
@@ -295,7 +318,7 @@ export const useEmergencyStore = defineStore('emergency', () => {
     submitting.value = true;
     flowStage.value = 'feedback';
     notice.value = '已确认诉求，正在生成受理反馈。';
-    chatMessages.value.push(createChatMessage('agent', '已确认，我将把诉求转入路由并同步政府工作台。', { variant: 'success' }));
+    chatMessages.value.push(createChatMessage('agent', '已确认，我将把诉求转入路由并生成右侧工单。', { variant: 'success' }));
 
     try {
       await delay(620);
@@ -308,14 +331,14 @@ export const useEmergencyStore = defineStore('emergency', () => {
       intakePreview.value = null;
       pendingPayload.value = null;
       flowStage.value = 'completed';
-      notice.value = '工单已同步到政府工作台，请到政府侧确认派单。';
+      notice.value = '工单已生成在右侧，请确认工单信息。';
     } catch {
       useMockData.value = true;
       response.value = intakePreview.value;
       intakePreview.value = null;
       pendingPayload.value = null;
       flowStage.value = 'completed';
-      notice.value = '后端暂不可用，已使用当前受理结果更新政府工作台演示工单。';
+      notice.value = '后端暂不可用，已使用当前受理结果生成右侧演示工单。';
     } finally {
       submitting.value = false;
     }
@@ -331,6 +354,8 @@ export const useEmergencyStore = defineStore('emergency', () => {
     response.value = null;
     intakePreview.value = null;
     pendingPayload.value = null;
+    workOrderConfirmed.value = false;
+    workOrderConfirmationNotice.value = false;
     flowStage.value = 'idle';
     useMockData.value = false;
     pendingFiles.value = [];
@@ -370,6 +395,31 @@ export const useEmergencyStore = defineStore('emergency', () => {
     draftMessage.value = caseItem.description;
   }
 
+  function confirmWorkOrder() {
+    if (!response.value) {
+      notice.value = '请先完成诉求受理并生成工单。';
+      return;
+    }
+    workOrderConfirmed.value = true;
+    workOrderConfirmationNotice.value = true;
+    notice.value = '用户已确认工单。';
+  }
+
+  async function resolveConfirmationIntent(text: string) {
+    const ruleResult = inferConfirmationByRule(text);
+    if (ruleResult !== null) {
+      return ruleResult;
+    }
+
+    try {
+      notice.value = '正在快速判断确认意图。';
+      const result = await detectConfirmationIntent(text);
+      return result.confirmed;
+    } catch {
+      return false;
+    }
+  }
+
   function collectConversationText() {
     return chatMessages.value
       .filter((message) => message.role === 'user')
@@ -387,6 +437,7 @@ export const useEmergencyStore = defineStore('emergency', () => {
     return {
       ...form,
       reporter_name: selectedCase.value.source,
+      community_name: selectedCase.value.communityName,
       contact: null,
       location,
       description,
@@ -407,6 +458,8 @@ export const useEmergencyStore = defineStore('emergency', () => {
     feedbackHighlighted,
     feedbackResult,
     workOrderUpdated,
+    workOrderConfirmed,
+    workOrderConfirmationNotice,
     form,
     response,
     intakePreview,
@@ -425,5 +478,6 @@ export const useEmergencyStore = defineStore('emergency', () => {
     setPendingFiles,
     removePendingFile,
     appendSpeechText,
+    confirmWorkOrder,
   };
 });

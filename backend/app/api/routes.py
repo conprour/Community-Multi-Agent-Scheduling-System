@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, File, UploadFile
 
 from app.repositories.uploads.upload_file_repository import UploadFileRepository
-from app.schemas.emergency import EmergencyFlowResponse, EmergencyReportCreate, UploadAttachmentsResponse
+from app.schemas.emergency import ConfirmationIntentRequest, ConfirmationIntentResponse, EmergencyFlowResponse, EmergencyReportCreate, UploadAttachmentsResponse
 from app.services.emergency_flow_service import EmergencyFlowService
 
 
@@ -36,3 +36,8 @@ def submit_emergency(payload: EmergencyReportCreate) -> EmergencyFlowResponse:
 @router.post("/api/intake/analyze", response_model=EmergencyFlowResponse)
 def analyze_emergency(payload: EmergencyReportCreate) -> EmergencyFlowResponse:
     return service.handle_report(payload, persist=False)
+
+
+@router.post("/api/intake/confirm-intent", response_model=ConfirmationIntentResponse)
+def detect_confirmation_intent(payload: ConfirmationIntentRequest) -> ConfirmationIntentResponse:
+    return service.detect_confirmation_intent(payload.text)

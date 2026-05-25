@@ -24,6 +24,7 @@ class Settings:
     bailian_api_key: str
     bailian_base_url: str
     bailian_vlm_model: str
+    bailian_intent_model: str
     bailian_asr_model: str
 
 
@@ -52,6 +53,7 @@ def get_settings() -> Settings:
             "BAILIAN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"
         ),
         bailian_vlm_model=os.getenv("BAILIAN_VLM_MODEL", "qwen3.6-plus"),
+        bailian_intent_model=os.getenv("BAILIAN_INTENT_MODEL", "qwen-turbo"),
         bailian_asr_model=os.getenv("BAILIAN_ASR_MODEL", "fun-asr-realtime-2026-02-28"),
     )
 

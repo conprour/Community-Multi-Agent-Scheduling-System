@@ -9,6 +9,11 @@
     </header>
 
     <section class="chat-box" :class="{ highlighted: store.chatHighlighted }">
+      <div v-if="store.workOrderConfirmationNotice" class="order-confirmation-pop">
+        <strong>用户已确认工单</strong>
+        <span>{{ store.response?.service_order.order_id }}</span>
+      </div>
+
       <div class="message-history">
         <article
           v-for="message in store.chatMessages"
@@ -39,6 +44,7 @@
           class="chat-textarea"
           placeholder="继续补充诉求，例如：餐馆叫川香小厨，门牌是 12 号，晚上十点后最吵。"
           :disabled="store.submitting"
+          @keydown.enter="handleTextareaEnter"
         />
 
         <div class="composer-toolbar">
@@ -90,7 +96,6 @@
         <ul class="analysis-list">
           <li v-for="risk in feedbackResult.demand_package.risks" :key="risk">{{ risk }}</li>
         </ul>
-        <RouterLink v-if="store.response" class="workbench-link" to="/government">查看政府工作台</RouterLink>
       </template>
 
       <template v-else>
@@ -159,6 +164,33 @@ function handleImageChange(event: Event) {
   const target = event.target as HTMLInputElement;
   store.setPendingFiles(Array.from(target.files ?? []));
   target.value = '';
+}
+
+function handleTextareaEnter(event: KeyboardEvent) {
+  if (event.isComposing) {
+    return;
+  }
+
+  if (event.ctrlKey || event.altKey) {
+    event.preventDefault();
+    insertLineBreak(event.target as HTMLTextAreaElement);
+    return;
+  }
+
+  event.preventDefault();
+  if (!store.submitting) {
+    void store.submitCurrentReport();
+  }
+}
+
+function insertLineBreak(textarea: HTMLTextAreaElement) {
+  const start = textarea.selectionStart ?? store.draftMessage.length;
+  const end = textarea.selectionEnd ?? start;
+  store.draftMessage = `${store.draftMessage.slice(0, start)}\n${store.draftMessage.slice(end)}`;
+
+  requestAnimationFrame(() => {
+    textarea.setSelectionRange(start + 1, start + 1);
+  });
 }
 
 function toggleSpeechRecognition() {
@@ -248,8 +280,28 @@ onBeforeUnmount(() => {
 }
 
 .chat-box.highlighted {
-  border-color: rgba(235, 127, 56, 0.76);
-  box-shadow: 0 0 0 3px rgba(235, 127, 56, 0.13), 0 18px 34px rgba(235, 127, 56, 0.12);
+  border-color: rgba(235, 127, 56, 0.96);
+  box-shadow: 0 0 0 6px rgba(235, 127, 56, 0.18), 0 24px 42px rgba(235, 127, 56, 0.2);
+  transform: translateY(-2px);
+}
+
+.order-confirmation-pop {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(232, 250, 241, 0.98), rgba(239, 248, 250, 0.98));
+  border: 1px solid rgba(54, 155, 95, 0.52);
+  box-shadow: 0 16px 28px rgba(54, 155, 95, 0.14);
+}
+
+.order-confirmation-pop strong {
+  color: #197a5c;
+}
+
+.order-confirmation-pop span {
+  color: rgba(52, 75, 87, 0.78);
+  font-size: 13px;
 }
 
 .message-history {
@@ -282,8 +334,9 @@ onBeforeUnmount(() => {
 }
 
 .message-bubble.question {
-  border-color: rgba(235, 127, 56, 0.48);
+  border-color: rgba(235, 127, 56, 0.72);
   background: rgba(255, 244, 233, 0.96);
+  box-shadow: 0 10px 22px rgba(235, 127, 56, 0.13);
 }
 
 .message-bubble.success {
@@ -443,9 +496,9 @@ onBeforeUnmount(() => {
 }
 
 .agent-analysis.highlighted {
-  border-color: rgba(31, 138, 151, 0.62);
-  box-shadow: 0 0 0 3px rgba(31, 138, 151, 0.12), 0 16px 30px rgba(31, 138, 151, 0.1);
-  transform: translateY(-1px);
+  border-color: rgba(31, 138, 151, 0.86);
+  box-shadow: 0 0 0 6px rgba(31, 138, 151, 0.16), 0 22px 40px rgba(31, 138, 151, 0.16);
+  transform: translateY(-2px);
 }
 
 .analysis-topline {
@@ -516,21 +569,6 @@ onBeforeUnmount(() => {
   padding-left: 18px;
   color: rgba(52, 75, 87, 0.88);
   line-height: 1.8;
-}
-
-.workbench-link {
-  width: fit-content;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 38px;
-  padding: 0 14px;
-  border-radius: 999px;
-  color: #fff;
-  background: linear-gradient(135deg, #f28a45, #dc6730);
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 600;
 }
 
 .case-preview {

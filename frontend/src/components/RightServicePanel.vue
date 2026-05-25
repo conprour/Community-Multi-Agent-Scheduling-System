@@ -1,74 +1,49 @@
 <template>
-  <section class="panel card-panel right-panel" :class="{ updated: store.workOrderUpdated }">
+  <section class="panel card-panel right-panel" :class="{ updated: store.workOrderUpdated, confirmed: store.workOrderConfirmed }">
     <header class="panel-header">
       <div>
-        <p class="eyebrow">派单确认</p>
-        <h2>标准工单与协办信息</h2>
+        <p class="eyebrow">群众端确认</p>
+        <h2>工单派发</h2>
       </div>
-      <el-tag :type="store.useMockData ? 'warning' : 'success'" effect="dark">
-        {{ store.useMockData ? 'Mock 输出' : '接口输出' }}
+      <el-tag :type="statusTagType" effect="dark">
+        {{ statusText }}
       </el-tag>
     </header>
 
     <template v-if="store.response">
-      <article class="service-card primary-card">
-        <div class="service-card-topline">
+      <article class="dispatch-card primary-card">
+        <div class="dispatch-topline">
           <span>工单编号</span>
           <strong>{{ store.response.service_order.order_id }}</strong>
         </div>
-        <div class="service-badges">
-          <span class="service-badge badge-accent">{{ store.response.service_order.status }}</span>
-          <span class="service-badge">{{ store.response.routing_decision.service_sla }}</span>
-          <span class="service-badge">{{ store.response.routing_decision.responsible_role }}</span>
+        <p class="dispatch-unit">{{ store.response.routing_decision.responsible_unit }}</p>
+        <div class="dispatch-meta">
+          <span>{{ store.response.service_order.status }}</span>
+          <span>{{ store.response.routing_decision.service_sla }}</span>
         </div>
       </article>
 
-      <article class="service-card">
-        <h3>建议主办部门</h3>
-        <p class="service-main">{{ store.response.routing_decision.responsible_unit }}</p>
-        <p class="service-secondary">预计 {{ store.response.routing_decision.eta_minutes }} 分钟内完成核查派单</p>
+      <article class="dispatch-card">
+        <h3>诉求分析建议</h3>
+        <p class="summary-text">{{ store.response.demand_package.summary }}</p>
+        <ul>
+          <li v-for="item in suggestionItems" :key="item">{{ item }}</li>
+        </ul>
       </article>
 
-      <article class="service-card">
-        <h3>诉求地点</h3>
-        <p class="service-main">{{ store.response.service_order.service_location }}</p>
-        <p class="service-secondary">缺少商户门牌时，建议先由坐席补充信息后再正式派发。</p>
+      <article class="dispatch-card compact-card">
+        <h3>服务地点</h3>
+        <p>{{ store.response.service_order.service_location }}</p>
       </article>
 
-      <article class="service-card grid-card">
-        <div>
-          <h3>建议处置流程</h3>
-          <ul>
-            <li v-for="action in store.response.service_order.service_actions" :key="action">{{ action }}</li>
-          </ul>
-        </div>
-        <div>
-          <h3>群众反馈话术</h3>
-          <ul>
-            <li v-for="advice in store.response.demand_package.temporary_guidance" :key="advice">{{ advice }}</li>
-          </ul>
-        </div>
-      </article>
-
-      <article class="service-card grid-card compact-grid">
-        <div>
-          <h3>派单理由</h3>
-          <ul>
-            <li v-for="reason in store.response.routing_decision.rationale" :key="reason">{{ reason }}</li>
-          </ul>
-        </div>
-        <div>
-          <h3>协办与审计备注</h3>
-          <ul>
-            <li v-for="note in combinedNotes" :key="note">{{ note }}</li>
-          </ul>
-        </div>
-      </article>
+      <button type="button" class="confirm-order-btn" :disabled="store.workOrderConfirmed" @click="store.confirmWorkOrder()">
+        {{ store.workOrderConfirmed ? '已确认工单' : '确认工单信息' }}
+      </button>
     </template>
 
-    <article v-else class="service-card empty-card">
-      <h3>等待生成标准工单</h3>
-      <p>提交左侧案例后，这里会展示工单编号、主办部门、协办部门、派单理由和人工确认提示。</p>
+    <article v-else class="dispatch-card empty-card">
+      <h3>等待生成工单</h3>
+      <p>用户确认客服复述后，这里会生成派发单位和诉求分析建议。</p>
     </article>
   </section>
 </template>
@@ -80,14 +55,33 @@ import { useEmergencyStore } from '@/stores/emergency';
 
 const store = useEmergencyStore();
 
-const combinedNotes = computed(() => {
+const statusText = computed(() => {
+  if (store.workOrderConfirmed) {
+    return '用户已确认';
+  }
+  if (store.useMockData) {
+    return 'Mock 输出';
+  }
+  return store.response ? '待用户确认' : '等待生成';
+});
+
+const statusTagType = computed(() => {
+  if (store.workOrderConfirmed) {
+    return 'warning';
+  }
+  if (store.useMockData) {
+    return 'warning';
+  }
+  return store.response ? 'primary' : 'info';
+});
+
+const suggestionItems = computed(() => {
   if (!store.response) {
     return [];
   }
-
   return [
-    ...store.response.service_order.notes,
-    ...store.response.routing_decision.backup_units.map((unit) => `协同待命：${unit}`),
+    ...store.response.demand_package.risks.slice(0, 2),
+    ...store.response.demand_package.temporary_guidance.slice(0, 2),
   ];
 });
 </script>
@@ -96,15 +90,20 @@ const combinedNotes = computed(() => {
 .right-panel {
   display: grid;
   gap: 16px;
-  transition: border-color 0.24s ease, box-shadow 0.24s ease;
+  transition: border-color 0.24s ease, box-shadow 0.24s ease, transform 0.24s ease;
 }
 
 .right-panel.updated {
-  border-color: rgba(31, 138, 151, 0.5);
-  box-shadow: 0 0 0 3px rgba(31, 138, 151, 0.1), 0 24px 42px rgba(31, 138, 151, 0.1);
+  border-color: rgba(31, 138, 151, 0.72);
+  box-shadow: 0 0 0 5px rgba(31, 138, 151, 0.16), 0 28px 48px rgba(31, 138, 151, 0.16);
+  transform: translateY(-2px);
 }
 
-.service-card {
+.right-panel.confirmed {
+  border-color: rgba(235, 127, 56, 0.58);
+}
+
+.dispatch-card {
   border-radius: 20px;
   padding: 18px;
   background: rgba(255, 255, 255, 0.88);
@@ -112,11 +111,11 @@ const combinedNotes = computed(() => {
 }
 
 .primary-card {
-  background: linear-gradient(180deg, rgba(255, 212, 183, 0.8), rgba(255, 250, 246, 0.96));
-  border-color: rgba(247, 180, 128, 0.52);
+  background: linear-gradient(180deg, rgba(255, 212, 183, 0.86), rgba(255, 250, 246, 0.98));
+  border-color: rgba(247, 180, 128, 0.58);
 }
 
-.service-card-topline {
+.dispatch-topline {
   display: flex;
   justify-content: space-between;
   gap: 12px;
@@ -124,74 +123,84 @@ const combinedNotes = computed(() => {
   font-size: 13px;
 }
 
-.service-card-topline strong {
+.dispatch-topline strong {
   color: #223a44;
 }
 
-.service-badges {
+.dispatch-unit {
+  margin: 14px 0 0;
+  color: #17313d;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.dispatch-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 14px;
 }
 
-.service-badge {
+.dispatch-meta span {
   padding: 7px 12px;
   border-radius: 999px;
-  font-size: 12px;
   background: rgba(237, 244, 247, 0.92);
   color: #244451;
+  font-size: 12px;
 }
 
-.badge-accent {
-  background: rgba(255, 126, 82, 0.24);
-}
-
-.service-card h3 {
+.dispatch-card h3,
+.dispatch-card p {
   margin: 0;
-  font-size: 14px;
+}
+
+.dispatch-card h3 {
   color: rgba(64, 86, 96, 0.82);
+  font-size: 14px;
 }
 
-.service-main {
-  margin: 10px 0 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #183641;
+.summary-text,
+.compact-card p,
+.empty-card p {
+  margin-top: 10px;
+  color: rgba(52, 75, 87, 0.86);
+  line-height: 1.75;
 }
 
-.service-secondary {
-  margin: 8px 0 0;
-  color: rgba(70, 94, 105, 0.78);
-  line-height: 1.7;
-}
-
-.grid-card {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.compact-grid {
-  gap: 14px;
-}
-
-.service-card ul {
+.dispatch-card ul {
   margin: 12px 0 0;
   padding-left: 18px;
-  line-height: 1.75;
   color: rgba(61, 84, 95, 0.82);
+  line-height: 1.75;
 }
 
-.empty-card p {
-  margin: 10px 0 0;
-  line-height: 1.7;
-  color: rgba(74, 99, 109, 0.76);
+.confirm-order-btn {
+  justify-self: end;
+  min-height: 36px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, #f08c46, #df6827);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 12px 22px rgba(223, 104, 39, 0.18);
+  transition: box-shadow 0.2s ease, filter 0.2s ease, transform 0.2s ease;
 }
 
-@media (max-width: 1200px) {
-  .grid-card {
-    grid-template-columns: 1fr;
-  }
+.confirm-order-btn:hover:not(:disabled) {
+  filter: brightness(1.03);
+  box-shadow: 0 15px 26px rgba(223, 104, 39, 0.24);
+  transform: translateY(-1px);
+}
+
+.confirm-order-btn:disabled {
+  cursor: default;
+  color: rgba(207, 100, 30, 0.78);
+  background: rgba(242, 141, 78, 0.15);
+  box-shadow: none;
 }
 </style>
