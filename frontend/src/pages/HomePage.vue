@@ -20,20 +20,29 @@
           <span>民生问题流转</span>
           <i>实时协同</i>
         </div>
-        <div class="city-map">
-          <span class="map-block block-a"></span>
-          <span class="map-block block-b"></span>
-          <span class="map-block block-c"></span>
-          <span class="map-block block-d"></span>
-          <span class="route-line route-a"></span>
-          <span class="route-line route-b"></span>
-          <span class="route-line route-c"></span>
-          <span class="flow-node node-citizen">群众诉求</span>
-          <span class="flow-node node-agent">Agent 协同</span>
-          <span class="flow-node node-department">部门调度</span>
-          <span class="data-chip chip-a">分类</span>
-          <span class="data-chip chip-b">派单</span>
-          <span class="data-chip chip-c">看板</span>
+        <div class="clean-flow">
+          <article class="process-step">
+            <span>01</span>
+            <strong>群众诉求</strong>
+            <p>文本、图片、语音汇入</p>
+          </article>
+          <span class="flow-connector"></span>
+          <article class="process-step agent-step">
+            <span>02</span>
+            <strong>Agent 协同</strong>
+            <p>理解、分类、补全、路由</p>
+          </article>
+          <span class="flow-connector"></span>
+          <article class="process-step">
+            <span>03</span>
+            <strong>部门调度</strong>
+            <p>派单处置与资源分配</p>
+          </article>
+          <div class="signal-row">
+            <span>快速回应</span>
+            <span>合理分配</span>
+            <span>数据看板</span>
+          </div>
         </div>
       </div>
     </section>
@@ -164,150 +173,95 @@
   font-style: normal;
 }
 
-.city-map {
-  position: relative;
+.clean-flow {
   min-height: 330px;
-  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 42px minmax(120px, 1fr) 42px minmax(120px, 1fr);
+  grid-template-rows: 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 24px;
   border-radius: 20px;
   background:
-    linear-gradient(120deg, rgba(246, 251, 250, 0.94), rgba(228, 243, 244, 0.96)),
-    repeating-linear-gradient(0deg, transparent, transparent 34px, rgba(101, 141, 153, 0.08) 35px),
-    repeating-linear-gradient(90deg, transparent, transparent 44px, rgba(101, 141, 153, 0.08) 45px);
+    linear-gradient(135deg, rgba(246, 251, 250, 0.96), rgba(230, 244, 245, 0.94));
   border: 1px solid rgba(214, 228, 233, 0.92);
 }
 
-.map-block,
-.route-line,
-.flow-node,
-.data-chip {
-  position: absolute;
-}
-
-.map-block {
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.68);
-  border: 1px solid rgba(198, 218, 225, 0.74);
-}
-
-.block-a {
-  left: 8%;
-  top: 10%;
-  width: 26%;
-  height: 26%;
-}
-
-.block-b {
-  right: 8%;
-  top: 12%;
-  width: 28%;
-  height: 30%;
-  background: rgba(228, 242, 237, 0.72);
-}
-
-.block-c {
-  left: 13%;
-  bottom: 10%;
-  width: 30%;
-  height: 28%;
-  background: rgba(255, 240, 226, 0.74);
-}
-
-.block-d {
-  right: 12%;
-  bottom: 14%;
-  width: 26%;
-  height: 24%;
-}
-
-.route-line {
-  height: 8px;
-  border-radius: 999px;
+.process-step {
+  min-height: 168px;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 22px;
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 0 0 1px rgba(163, 188, 197, 0.18);
-}
-
-.route-a {
-  left: 7%;
-  top: 48%;
-  width: 86%;
-  transform: rotate(-8deg);
-}
-
-.route-b {
-  left: 22%;
-  top: 22%;
-  width: 62%;
-  transform: rotate(33deg);
-}
-
-.route-c {
-  left: 16%;
-  bottom: 25%;
-  width: 68%;
-  transform: rotate(-25deg);
-}
-
-.flow-node {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 108px;
-  min-height: 58px;
-  padding: 0 16px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.94);
   border: 1px solid rgba(218, 231, 236, 0.95);
-  color: #17313d;
-  font-size: 14px;
+  box-shadow: 0 18px 30px rgba(92, 121, 134, 0.13);
+}
+
+.process-step span {
+  width: fit-content;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #246f7e;
+  background: rgba(60, 143, 160, 0.12);
+  font-size: 12px;
   font-weight: 800;
-  box-shadow: 0 18px 30px rgba(92, 121, 134, 0.16);
 }
 
-.node-citizen {
-  left: 8%;
-  top: 43%;
+.process-step strong {
+  color: #17313d;
+  font-size: 20px;
 }
 
-.node-agent {
-  left: 50%;
-  top: 50%;
+.process-step p {
+  margin: 0;
+  color: rgba(56, 80, 92, 0.72);
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.agent-step {
   color: #fff;
   background: linear-gradient(135deg, #f28a45, #dc6730);
   border-color: rgba(242, 138, 69, 0.6);
-  transform: translate(-50%, -50%);
 }
 
-.node-department {
-  right: 8%;
-  top: 43%;
+.agent-step span {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
 }
 
-.data-chip {
-  min-height: 30px;
-  padding: 0 10px;
+.agent-step strong,
+.agent-step p {
+  color: #fff;
+}
+
+.flow-connector {
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(60, 143, 160, 0.3), rgba(242, 138, 69, 0.55));
+}
+
+.signal-row {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.signal-row span {
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
+  padding: 0 12px;
   border-radius: 999px;
-  color: #246f7e;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(195, 218, 225, 0.82);
+  color: rgba(49, 75, 87, 0.86);
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(205, 222, 229, 0.86);
   font-size: 12px;
   font-weight: 700;
-}
-
-.chip-a {
-  left: 31%;
-  top: 29%;
-}
-
-.chip-b {
-  right: 30%;
-  top: 30%;
-}
-
-.chip-c {
-  right: 24%;
-  bottom: 23%;
 }
 
 .entry-grid {
@@ -411,13 +365,18 @@
     min-height: 270px;
   }
 
-  .city-map {
+  .clean-flow {
     min-height: 205px;
   }
 
   .entry-card {
     min-height: 190px;
   }
+
+  .process-step {
+    min-height: 112px;
+  }
+
 }
 
 @media (max-width: 640px) {
@@ -440,20 +399,23 @@
     padding: 14px;
   }
 
-  .city-map {
+  .clean-flow {
     min-height: 174px;
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    gap: 12px;
+    padding: 14px;
   }
 
-  .flow-node {
-    min-width: 82px;
-    min-height: 44px;
-    padding: 0 10px;
-    font-size: 12px;
+  .process-step {
+    min-height: 96px;
+    padding: 16px;
   }
 
-  .data-chip {
-    min-height: 26px;
-    padding: 0 8px;
+  .flow-connector {
+    width: 3px;
+    height: 22px;
+    justify-self: center;
   }
 
   .entry-card {
