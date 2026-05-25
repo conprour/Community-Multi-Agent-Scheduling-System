@@ -1,0 +1,123 @@
+:root {
+  color-scheme: light;
+  --bg-page: #f4f8f7;
+  --bg-panel: rgba(255, 255, 255, 0.82);
+  --border-subtle: rgba(181, 204, 214, 0.48);
+  --text-primary: #17313d;
+  --text-secondary: rgba(59, 82, 94, 0.74);
+  --accent: #eb7f38;
+  --accent-soft: rgba(235, 127, 56, 0.14);
+  --font-sans: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background:
+    radial-gradient(circle at top left, rgba(255, 186, 136, 0.42), transparent 25%),
+    radial-gradient(circle at top right, rgba(127, 200, 209, 0.3), transparent 28%),
+    linear-gradient(180deg, #f7faf8 0%, #eff5f4 50%, #e8f0ef 100%);
+  color: var(--text-primary);
+}
+
+a {
+  color: inherit;
+}
+
+.dashboard-shell {
+  min-height: 100vh;
+  padding: 28px;
+}
+
+.hero-band {
+  padding: 12px 2px 24px;
+}
+
+.hero-band h1 {
+  margin: 8px 0 0;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: #16303b;
+}
+
+.hero-copy {
+  max-width: 720px;
+  margin: 14px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.02fr) minmax(420px, 1.18fr) minmax(320px, 0.98fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.card-panel {
+  min-height: 100%;
+  padding: 22px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(251, 253, 253, 0.88));
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 24px 42px rgba(92, 121, 134, 0.12);
+  backdrop-filter: blur(12px);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
+.panel-header h2 {
+  margin: 6px 0 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(224, 122, 57, 0.92);
+}
+
+@media (max-width: 1280px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-band {
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-shell {
+    padding: 16px;
+  }
+
+  .card-panel {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .panel-header {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "water_pipe_burst": {
+    "category": "给排水故障",
+    "urgency": "high",
+    "impact_scope": "楼栋公共区域及周边住户",
+    "risks": [
+      "可能影响电梯井和公共电路",
+      "积水区域存在滑倒风险",
+      "需要尽快关闭阀门控制外溢"
+    ],
+    "requires_immediate_visit": true,
+    "suggested_questions": [
+      "请补充楼栋、单元和具体楼层。",
+      "积水是否已经蔓延到电梯口或配电区域？"
+    ],
+    "temporary_guidance": [
+      "远离插座、电梯口和明显积水区域。",
+      "若知道阀门位置，可先尝试关闭就近阀门。",
+      "请保留现场照片，等待维修人员到场。"
+    ],
+    "routing": {
+      "responsible_unit": "XX小区物业工程维修组",
+      "responsible_role": "值班维修员",
+      "backup_units": [
+        "社区值班人员",
+        "电工待命"
+      ],
+      "eta_minutes": 20,
+      "service_sla": "20 分钟内到场",
+      "rationale": [
+        "问题属于楼栋公共区域的给排水故障。",
+        "存在积水扩散风险，需要优先派发给值班维修组。",
+        "若现场靠近电梯井或电路区域，需同步通知电工待命。"
+      ]
+    },
+    "service_order": {
+      "service_actions": [
+        "到场后先检查主阀或分支阀门。",
+        "确认漏水点是否属于公共管道。",
+        "必要时设置警示区域，避免居民靠近积水带。"
+      ],
+      "notes": [
+        "若发现渗入电梯井，立即升级为协同处理。",
+        "若涉及住户室内自有设施损坏，现场明确责任边界。"
+      ]
+    }
+  },
+  "power_failure": {
+    "category": "公共照明故障",
+    "urgency": "medium",
+    "impact_scope": "楼道公共空间",
+    "risks": [
+      "夜间通行视线受影响",
+      "老年住户上下楼存在安全风险"
+    ],
+    "requires_immediate_visit": true,
+    "suggested_questions": [
+      "请补充具体楼栋和停电持续时间。"
+    ],
+    "temporary_guidance": [
+      "请先避免在无照明楼道中独自通行。"
+    ],
+    "routing": {
+      "responsible_unit": "XX小区物业电工班",
+      "responsible_role": "值班电工",
+      "backup_units": [
+        "社区值班人员"
+      ],
+      "eta_minutes": 30,
+      "service_sla": "30 分钟内到场",
+      "rationale": [
+        "问题属于公共照明故障，责任主体为物业电工班。"
+      ]
+    },
+    "service_order": {
+      "service_actions": [
+        "检查总闸和楼层照明线路。",
+        "必要时更换损坏灯具或保险。"
+      ],
+      "notes": [
+        "若涉及大面积停电，转供电协同处理。"
+      ]
+    }
+  },
+  "generic_emergency": {
+    "category": "综合急事",
+    "urgency": "medium",
+    "impact_scope": "待进一步确认",
+    "risks": [
+      "问题类型尚需进一步核实"
+    ],
+    "requires_immediate_visit": false,
+    "suggested_questions": [
+      "请补充更详细的位置和现场情况。"
+    ],
+    "temporary_guidance": [
+      "请尽量远离可能存在风险的现场区域。"
+    ],
+    "routing": {
+      "responsible_unit": "社区综合受理台",
+      "responsible_role": "值班调度员",
+      "backup_units": [
+        "社区值班人员"
+      ],
+      "eta_minutes": 40,
+      "service_sla": "40 分钟内确认处置路径",
+      "rationale": [
+        "问题暂未匹配到明确场景，先进入综合受理台核实。"
+      ]
+    },
+    "service_order": {
+      "service_actions": [
+        "先电话回访确认问题类型和位置。"
+      ],
+      "notes": [
+        "待补充信息后再进行正式派单。"
+      ]
+    }
+  }
+}

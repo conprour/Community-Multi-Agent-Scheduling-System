@@ -1,0 +1,12 @@
+{
+  "reporter_name": "张阿姨",
+  "contact": "13800000000",
+  "location": "2栋3单元4楼电梯口",
+  "description": "2栋3单元4楼水管爆了，地上全是水，怕漏到电梯里。",
+  "input_type": "text",
+  "tags": [
+    "漏水",
+    "紧急"
+  ],
+  "attachments": []
+}

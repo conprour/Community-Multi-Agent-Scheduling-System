@@ -1,0 +1,78 @@
+{
+  "request_id": "req-20260525110407-e0b004",
+  "submitted_payload": {
+    "reporter_name": "李阿姨",
+    "contact": "13900000000",
+    "location": "2栋3单元4楼电梯口",
+    "description": "现场图片显示楼道附近有明显积水，请尽快处理。",
+    "input_type": "image",
+    "tags": [
+      "漏水",
+      "现场图片"
+    ],
+    "attachments": [
+      {
+        "name": "test-image.png",
+        "mime_type": "image/png",
+        "stored_path": "data/uploads/099e40336d894fdaba10220724219141.png"
+      }
+    ]
+  },
+  "processing_result": {
+    "request_id": "req-20260525110407-e0b004",
+    "created_at": "2026-05-25T11:04:07.791371",
+    "demand_package": {
+      "summary": "已识别为给排水故障，核心描述：现场图片显示楼道附近有明显积水，请尽快处理。",
+      "category": "给排水故障",
+      "location": "2栋3单元4楼电梯口",
+      "urgency": "high",
+      "impact_scope": "楼栋公共区域及周边住户",
+      "risks": [
+        "可能影响电梯井和公共电路",
+        "积水区域存在滑倒风险",
+        "需要尽快关闭阀门控制外溢"
+      ],
+      "requires_immediate_visit": true,
+      "missing_fields": [],
+      "suggested_questions": [
+        "请补充楼栋、单元和具体楼层。",
+        "积水是否已经蔓延到电梯口或配电区域？"
+      ],
+      "temporary_guidance": [
+        "远离插座、电梯口和明显积水区域。",
+        "若知道阀门位置，可先尝试关闭就近阀门。",
+        "请保留现场照片，等待维修人员到场。"
+      ]
+    },
+    "routing_decision": {
+      "scenario_code": "water_pipe_burst",
+      "responsible_unit": "XX小区物业工程维修组",
+      "responsible_role": "值班维修员",
+      "backup_units": [
+        "社区值班人员",
+        "电工待命"
+      ],
+      "eta_minutes": 20,
+      "service_sla": "20 分钟内到场",
+      "rationale": [
+        "问题属于楼栋公共区域的给排水故障。",
+        "存在积水扩散风险，需要优先派发给值班维修组。",
+        "若现场靠近电梯井或电路区域，需同步通知电工待命。"
+      ]
+    },
+    "service_order": {
+      "order_id": "order-20260525110407-0a6853",
+      "status": "待派发",
+      "service_location": "2栋3单元4楼电梯口",
+      "service_actions": [
+        "到场后先检查主阀或分支阀门。",
+        "确认漏水点是否属于公共管道。",
+        "必要时设置警示区域，避免居民靠近积水带。"
+      ],
+      "notes": [
+        "若发现渗入电梯井，立即升级为协同处理。",
+        "若涉及住户室内自有设施损坏，现场明确责任边界。"
+      ]
+    }
+  }
+}

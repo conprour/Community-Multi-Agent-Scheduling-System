@@ -1,0 +1,40 @@
+# Node / Vue
+node_modules/
+dist/
+.vite/
+coverage/
+
+# Python / FastAPI
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Environment files (包含 API Key 等隐私信息，不提交)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Runtime uploads and generated data
+data/uploads/
+data/runtime/
+data/cache/
+temp/
+tmp/
+
+# Build artifacts
+frontend/dist/
+frontend/.vite/
