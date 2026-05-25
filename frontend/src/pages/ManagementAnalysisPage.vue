@@ -25,6 +25,8 @@
           <el-form-item label="分析问题">
             <el-input
               v-model="store.form.question"
+              class="question-input"
+              :class="{ 'is-analysis-active': isQuestionHighlighted }"
               type="textarea"
               :rows="7"
               placeholder="例如：夏天中暑情况增多，我应该如何分配医疗资源？"
@@ -63,10 +65,16 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+
 import ManagementAgentFlowPanel from '@/components/ManagementAgentFlowPanel.vue';
 import { useManagementStore } from '@/stores/management';
 
 const store = useManagementStore();
+
+const isQuestionHighlighted = computed(
+  () => Boolean(store.form.question.trim()) && store.stage !== 'idle' && store.stage !== 'completed',
+);
 </script>
 
 <style scoped>
@@ -87,6 +95,22 @@ const store = useManagementStore();
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.question-input {
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.question-input.is-analysis-active :deep(.el-textarea__inner) {
+  border-color: #f28a45;
+  background:
+    linear-gradient(135deg, rgba(255, 248, 240, 0.98), rgba(255, 255, 255, 0.98));
+  box-shadow:
+    0 0 0 3px rgba(242, 138, 69, 0.18),
+    0 14px 34px rgba(220, 103, 48, 0.14);
 }
 
 .question-summary {
