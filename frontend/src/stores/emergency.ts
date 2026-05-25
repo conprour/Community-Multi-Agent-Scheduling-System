@@ -135,6 +135,49 @@ function inferLocation(description: string, fallback: string) {
   return match?.[0] ?? fallback;
 }
 
+function inferCommunityName(description: string, fallback: string) {
+  const match = description.match(/[\u4e00-\u9fa5A-Za-z0-9#-]{2,18}(?:小区|家园|社区|公寓|花园|东里|北里|南里|西里)/);
+  return match?.[0] ?? fallback;
+}
+
+function inferTags(description: string, fallbackTags: string[]) {
+  if (['水管', '漏水', '爆了', '积水', '跑水', '渗水', '电梯里'].some((token) => description.includes(token))) {
+    return ['漏水', '紧急', '公共区域'];
+  }
+  if (['停电', '断电', '照明', '灯坏', '电力'].some((token) => description.includes(token))) {
+    return ['停电', '夜间', '公共区域'];
+  }
+  if (['电梯', '困人', '夹人', '反复开合'].some((token) => description.includes(token))) {
+    return ['电梯', '紧急', '安全风险'];
+  }
+  if (['消防通道', '堵住', '堆物', '杂物'].some((token) => description.includes(token))) {
+    return ['消防通道', '公共区域', '安全风险'];
+  }
+  if (['油烟', '餐馆', '餐饮', '噪声', '太吵', '扰民', '物业', '底商'].some((token) => description.includes(token))) {
+    return ['油烟扰民', '夜间噪声', '物业协调'];
+  }
+  return fallbackTags;
+}
+
+function inferDemandCase(description: string) {
+  if (['水管', '漏水', '爆了', '积水', '跑水', '渗水', '电梯里'].some((token) => description.includes(token))) {
+    return demandCases.find((item) => item.id === 'water-pipe');
+  }
+  if (['停电', '断电', '照明', '灯坏', '电力'].some((token) => description.includes(token))) {
+    return demandCases.find((item) => item.id === 'power-light');
+  }
+  if (['电梯', '困人', '夹人', '反复开合'].some((token) => description.includes(token))) {
+    return demandCases.find((item) => item.id === 'elevator-risk');
+  }
+  if (['消防通道', '堵住', '堆物', '杂物'].some((token) => description.includes(token))) {
+    return demandCases.find((item) => item.id === 'corridor-blocked');
+  }
+  if (['油烟', '餐馆', '餐饮', '噪声', '太吵', '扰民', '物业', '底商'].some((token) => description.includes(token))) {
+    return demandCases.find((item) => item.id === 'restaurant-fume-noise');
+  }
+  return null;
+}
+
 function inferInputType(files: File[], currentType: EmergencyReportCreate['input_type']) {
   if (files.some((file) => file.type.startsWith('image/'))) {
     return 'image';
@@ -277,8 +320,11 @@ export const useEmergencyStore = defineStore('emergency', () => {
     flowStage.value = 'intake';
 
     const description = collectConversationText();
+    const inferredCase = inferDemandCase(description) ?? selectedCase.value;
+    selectedCaseId.value = inferredCase.id;
     const inputType = inferInputType(filesForMessage, form.input_type);
-    const location = inferLocation(description, selectedCase.value.location);
+    const location = inferLocation(description, inferredCase.location);
+    const communityName = inferCommunityName(description, inferredCase.communityName);
     let attachments: AttachmentMeta[] = [...form.attachments];
 
     try {
@@ -287,23 +333,23 @@ export const useEmergencyStore = defineStore('emergency', () => {
         attachments = uploaded.attachments;
       }
 
-      const payload = buildCurrentPayload(description, location, inputType, attachments);
+      const payload = buildCurrentPayload(description, inferredCase, location, communityName, inputType, attachments);
       const analysis = await analyzeEmergency(payload);
       Object.assign(form, payload);
       intakePreview.value = analysis;
       pendingPayload.value = payload;
       flowStage.value = 'clarifying';
       notice.value = '客服已整理当前诉求，请确认或继续补充信息。';
-      chatMessages.value.push(createChatMessage('agent', buildConfirmationMessage(analysis, selectedCase.value.communityName), { variant: 'question' }));
+      chatMessages.value.push(createChatMessage('agent', buildConfirmationMessage(analysis, communityName), { variant: 'question' }));
     } catch {
-      const payload = buildCurrentPayload(description, location, inputType, attachments);
+      const payload = buildCurrentPayload(description, inferredCase, location, communityName, inputType, attachments);
       const fallback = buildMockResponse(payload);
       useMockData.value = true;
       intakePreview.value = fallback;
       pendingPayload.value = payload;
       flowStage.value = 'clarifying';
       notice.value = '后端暂不可用，已用本地规则整理确认话术。';
-      chatMessages.value.push(createChatMessage('agent', buildConfirmationMessage(fallback, selectedCase.value.communityName), { variant: 'question' }));
+      chatMessages.value.push(createChatMessage('agent', buildConfirmationMessage(fallback, communityName), { variant: 'question' }));
     } finally {
       submitting.value = false;
     }
@@ -430,19 +476,21 @@ export const useEmergencyStore = defineStore('emergency', () => {
 
   function buildCurrentPayload(
     description: string,
+    caseItem: DemandCase,
     location: string,
+    communityName: string,
     inputType: EmergencyReportCreate['input_type'],
     attachments: AttachmentMeta[],
   ): EmergencyReportCreate {
     return {
       ...form,
-      reporter_name: selectedCase.value.source,
-      community_name: selectedCase.value.communityName,
+      reporter_name: caseItem.source,
+      community_name: communityName,
       contact: null,
       location,
       description,
       input_type: inputType,
-      tags: [...selectedCase.value.tags],
+      tags: inferTags(description, caseItem.tags),
       attachments,
     };
   }

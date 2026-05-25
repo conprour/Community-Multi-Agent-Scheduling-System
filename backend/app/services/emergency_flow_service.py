@@ -45,7 +45,10 @@ class EmergencyFlowService:
     def handle_report(self, payload: EmergencyReportCreate, persist: bool = True) -> EmergencyFlowResponse:
         created_at = datetime.now()
         request_id = f"req-{created_at.strftime('%Y%m%d%H%M%S')}-{uuid4().hex[:6]}"
-        ai_insight = self.bailian_client.analyze_report(payload)
+        initial_description = payload.description.strip()
+        initial_scenario_code = self._detect_scenario(initial_description, payload.tags)
+        should_call_ai = payload.input_type != "text" or initial_scenario_code == "generic_emergency"
+        ai_insight = self.bailian_client.analyze_report(payload) if should_call_ai else None
         effective_description = ai_insight.transcript if ai_insight and ai_insight.transcript else payload.description.strip()
         if not effective_description:
             effective_description = "用户通过对话框提交了图片或语音材料，需结合附件判断急事类型。"
@@ -57,29 +60,30 @@ class EmergencyFlowService:
             ai_insight.category if ai_insight else None,
         )
         scenario = self._load_catalog().get(scenario_code) or self._load_catalog()["generic_emergency"]
-        summary = ai_insight.summary if ai_insight and ai_insight.summary else self._build_summary(effective_description, scenario["category"])
+        use_ai_insight = bool(ai_insight and self._insight_matches_scenario(ai_insight.category, scenario_code))
+        summary = ai_insight.summary if use_ai_insight and ai_insight and ai_insight.summary else self._build_summary(effective_description, scenario["category"])
         summary = self._with_community(summary, community_name)
-        category = ai_insight.category if ai_insight and ai_insight.category else scenario["category"]
-        urgency = ai_insight.urgency if ai_insight and ai_insight.urgency else scenario["urgency"]
+        category = ai_insight.category if use_ai_insight and ai_insight and ai_insight.category else scenario["category"]
+        urgency = ai_insight.urgency if use_ai_insight and ai_insight and ai_insight.urgency else scenario["urgency"]
         impact_scope = (
-            ai_insight.impact_scope if ai_insight and ai_insight.impact_scope else scenario["impact_scope"]
+            ai_insight.impact_scope if use_ai_insight and ai_insight and ai_insight.impact_scope else scenario["impact_scope"]
         )
-        risks = ai_insight.risks if ai_insight and ai_insight.risks else scenario["risks"]
+        risks = ai_insight.risks if use_ai_insight and ai_insight and ai_insight.risks else scenario["risks"]
         risks = self._with_community_list(risks, community_name)
         requires_immediate_visit = (
             ai_insight.requires_immediate_visit
-            if ai_insight and ai_insight.requires_immediate_visit is not None
+            if use_ai_insight and ai_insight and ai_insight.requires_immediate_visit is not None
             else scenario["requires_immediate_visit"]
         )
         suggested_questions = (
             ai_insight.suggested_questions
-            if ai_insight and ai_insight.suggested_questions
+            if use_ai_insight and ai_insight and ai_insight.suggested_questions
             else scenario["suggested_questions"]
         )
         suggested_questions = self._with_community_list(suggested_questions, community_name)
         temporary_guidance = (
             ai_insight.temporary_guidance
-            if ai_insight and ai_insight.temporary_guidance
+            if use_ai_insight and ai_insight and ai_insight.temporary_guidance
             else scenario["temporary_guidance"]
         )
         temporary_guidance = self._with_community_list(temporary_guidance, community_name)
@@ -99,7 +103,7 @@ class EmergencyFlowService:
 
         routing = scenario["routing"]
         rationale = self._with_community_list(routing["rationale"], community_name)
-        if ai_insight and ai_insight.route_hint:
+        if use_ai_insight and ai_insight and ai_insight.route_hint:
             rationale.insert(0, self._with_community(f"百炼辅助判断：{ai_insight.route_hint}", community_name))
         routing_decision = RoutingDecision(
             scenario_code=scenario_code,
@@ -113,7 +117,7 @@ class EmergencyFlowService:
 
         order_id = f"order-{created_at.strftime('%Y%m%d%H%M%S')}-{uuid4().hex[:6]}"
         notes = self._with_community_list(scenario["service_order"]["notes"], community_name)
-        if ai_insight:
+        if use_ai_insight and ai_insight:
             notes.insert(0, f"百炼增强已启用：{self.settings.bailian_vlm_model}")
             notes.extend(self._with_community_list(ai_insight.service_notes, community_name))
             if ai_insight.transcript:
@@ -146,18 +150,36 @@ class EmergencyFlowService:
         return self.repository.read_json(catalog_path, default={})
 
     def _detect_scenario(self, description: str, tags: list[str], category: str | None = None) -> str:
-        combined_text = f"{description} {' '.join(tags)} {category or ''}"
+        rule_text = f"{description} {' '.join(tags)}"
 
-        if any(keyword in combined_text for keyword in ["水管", "漏水", "爆了", "积水", "跑水", "渗水", "给排水"]):
+        if any(keyword in rule_text for keyword in ["水管", "漏水", "爆了", "积水", "跑水", "渗水", "给排水", "电梯里"]):
             return "water_pipe_burst"
 
-        if any(keyword in combined_text for keyword in ["停电", "断电", "照明", "灯坏", "电力"]):
+        if any(keyword in rule_text for keyword in ["停电", "断电", "照明", "灯坏", "电力"]):
             return "power_failure"
 
-        if any(keyword in combined_text for keyword in ["油烟", "餐馆", "餐饮", "噪声", "太吵", "扰民", "物业", "底商"]):
+        if any(keyword in rule_text for keyword in ["油烟", "餐馆", "餐饮", "噪声", "太吵", "扰民", "物业", "底商"]):
             return "restaurant_fume_noise"
 
+        if category:
+            if any(keyword in category for keyword in ["水管", "漏水", "积水", "给排水"]):
+                return "water_pipe_burst"
+            if any(keyword in category for keyword in ["停电", "断电", "照明", "电力"]):
+                return "power_failure"
+            if any(keyword in category for keyword in ["油烟", "餐饮", "噪声", "扰民"]):
+                return "restaurant_fume_noise"
+
         return "generic_emergency"
+
+    def _insight_matches_scenario(self, category: str | None, scenario_code: str) -> bool:
+        if not category or scenario_code == "generic_emergency":
+            return True
+        scenario_keywords = {
+            "water_pipe_burst": ["水管", "漏水", "积水", "给排水", "管道"],
+            "power_failure": ["停电", "断电", "照明", "电力"],
+            "restaurant_fume_noise": ["油烟", "餐饮", "噪声", "扰民", "物业"],
+        }
+        return any(keyword in category for keyword in scenario_keywords.get(scenario_code, []))
 
     def _build_summary(self, description: str, category: str) -> str:
         short_description = description.strip()
