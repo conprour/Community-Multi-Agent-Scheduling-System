@@ -3,9 +3,9 @@
     <section class="page-hero citizen-hero">
       <div>
         <p class="eyebrow">群众诉求提交端</p>
-        <h1>一句话提交社区诉求</h1>
+        <h1>一句话提交社区诉求--需求处理全链路展示</h1>
         <p>
-          群众只需要描述问题并确认客服复述，工单会在右侧生成并由用户确认。
+          群众只需要描述问题并确认客服复述，工单会在右侧生成并由工作人员确认。
         </p>
       </div>
       <div class="hero-links">

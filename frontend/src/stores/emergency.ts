@@ -217,7 +217,7 @@ export const useEmergencyStore = defineStore('emergency', () => {
       return '客服正在整理诉求';
     }
     if (flowStage.value === 'clarifying') {
-      return '等待用户确认';
+      return '等待工作人员确认';
     }
     if (flowStage.value === 'feedback') {
       return '受理反馈已生成';
@@ -402,7 +402,7 @@ export const useEmergencyStore = defineStore('emergency', () => {
     }
     workOrderConfirmed.value = true;
     workOrderConfirmationNotice.value = true;
-    notice.value = '用户已确认工单。';
+    notice.value = '工作人员已确认工单。';
   }
 
   async function resolveConfirmationIntent(text: string) {

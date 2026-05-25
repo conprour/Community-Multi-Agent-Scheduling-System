@@ -10,7 +10,7 @@
 
     <section class="chat-box" :class="{ highlighted: store.chatHighlighted }">
       <div v-if="store.workOrderConfirmationNotice" class="order-confirmation-pop">
-        <strong>用户已确认工单</strong>
+        <strong>工作人员已确认工单</strong>
         <span>{{ store.response?.service_order.order_id }}</span>
       </div>
 

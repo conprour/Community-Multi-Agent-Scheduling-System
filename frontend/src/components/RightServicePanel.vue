@@ -2,7 +2,7 @@
   <section class="panel card-panel right-panel" :class="{ updated: store.workOrderUpdated, confirmed: store.workOrderConfirmed }">
     <header class="panel-header">
       <div>
-        <p class="eyebrow">群众端确认</p>
+        <p class="eyebrow">工作人员确认</p>
         <h2>工单派发</h2>
       </div>
       <el-tag :type="statusTagType" effect="dark">
@@ -43,7 +43,7 @@
 
     <article v-else class="dispatch-card empty-card">
       <h3>等待生成工单</h3>
-      <p>用户确认客服复述后，这里会生成派发单位和诉求分析建议。</p>
+      <p>工作人员确认客服复述后，这里会生成派发单位和诉求分析建议。</p>
     </article>
   </section>
 </template>
@@ -57,12 +57,12 @@ const store = useEmergencyStore();
 
 const statusText = computed(() => {
   if (store.workOrderConfirmed) {
-    return '用户已确认';
+    return '工作人员已确认';
   }
   if (store.useMockData) {
     return 'Mock 输出';
   }
-  return store.response ? '待用户确认' : '等待生成';
+  return store.response ? '待工作人员确认' : '等待生成';
 });
 
 const statusTagType = computed(() => {
