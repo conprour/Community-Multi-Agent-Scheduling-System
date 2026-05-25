@@ -53,7 +53,7 @@ class BailianClient:
         effective_description: str,
     ) -> BailianEmergencyInsight | None:
         system_prompt = (
-            "你是社区急事办系统的诉求接受 Agent。"
+            "你是面向社区接诉即办与 12345 的民生诉求受理 Agent。"
             "请根据用户输入和现场图片，输出一个 JSON 对象，不要输出 Markdown。"
             "JSON 字段必须包含：summary, category, urgency, impact_scope, risks, "
             "requires_immediate_visit, suggested_questions, temporary_guidance, route_hint, service_notes。"
@@ -99,7 +99,7 @@ class BailianClient:
     ) -> str | list[dict[str, Any]]:
         prompt = "\n".join(
             [
-                f"报事人：{payload.reporter_name}",
+                f"诉求人：{payload.reporter_name}",
                 f"联系方式：{payload.contact or '未提供'}",
                 f"发生位置：{payload.location}",
                 f"输入方式：{payload.input_type}",

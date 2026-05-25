@@ -2,8 +2,8 @@
   <section class="panel card-panel right-panel">
     <header class="panel-header">
       <div>
-        <p class="eyebrow">服务执行</p>
-        <h2>工单与服务信息</h2>
+        <p class="eyebrow">派单确认</p>
+        <h2>标准工单与协办信息</h2>
       </div>
       <el-tag :type="store.useMockData ? 'warning' : 'success'" effect="dark">
         {{ store.useMockData ? 'Mock 输出' : '接口输出' }}
@@ -24,26 +24,26 @@
       </article>
 
       <article class="service-card">
-        <h3>责任单位</h3>
+        <h3>建议主办部门</h3>
         <p class="service-main">{{ store.response.routing_decision.responsible_unit }}</p>
-        <p class="service-secondary">预计 {{ store.response.routing_decision.eta_minutes }} 分钟到场</p>
+        <p class="service-secondary">预计 {{ store.response.routing_decision.eta_minutes }} 分钟内完成核查派单</p>
       </article>
 
       <article class="service-card">
-        <h3>服务地点</h3>
+        <h3>诉求地点</h3>
         <p class="service-main">{{ store.response.service_order.service_location }}</p>
-        <p class="service-secondary">建议先在现场设置警示范围，避免居民靠近积水区。</p>
+        <p class="service-secondary">缺少商户门牌时，建议先由坐席补充信息后再正式派发。</p>
       </article>
 
       <article class="service-card grid-card">
         <div>
-          <h3>处理动作</h3>
+          <h3>建议处置流程</h3>
           <ul>
             <li v-for="action in store.response.service_order.service_actions" :key="action">{{ action }}</li>
           </ul>
         </div>
         <div>
-          <h3>临时建议</h3>
+          <h3>群众反馈话术</h3>
           <ul>
             <li v-for="advice in store.response.demand_package.temporary_guidance" :key="advice">{{ advice }}</li>
           </ul>
@@ -52,13 +52,13 @@
 
       <article class="service-card grid-card compact-grid">
         <div>
-          <h3>路由理由</h3>
+          <h3>派单理由</h3>
           <ul>
             <li v-for="reason in store.response.routing_decision.rationale" :key="reason">{{ reason }}</li>
           </ul>
         </div>
         <div>
-          <h3>协同与备注</h3>
+          <h3>协办与审计备注</h3>
           <ul>
             <li v-for="note in combinedNotes" :key="note">{{ note }}</li>
           </ul>
@@ -67,8 +67,8 @@
     </template>
 
     <article v-else class="service-card empty-card">
-      <h3>等待生成服务信息</h3>
-      <p>提交左侧案例后，这里会展示工单编号、预计到场时间、处理动作和协同要求。</p>
+      <h3>等待生成标准工单</h3>
+      <p>提交左侧案例后，这里会展示工单编号、主办部门、协办部门、派单理由和人工确认提示。</p>
     </article>
   </section>
 </template>

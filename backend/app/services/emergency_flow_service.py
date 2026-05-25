@@ -136,6 +136,9 @@ class EmergencyFlowService:
         if any(keyword in combined_text for keyword in ["停电", "断电", "照明", "灯坏", "电力"]):
             return "power_failure"
 
+        if any(keyword in combined_text for keyword in ["油烟", "餐馆", "餐饮", "噪声", "太吵", "扰民", "物业", "底商"]):
+            return "restaurant_fume_noise"
+
         return "generic_emergency"
 
     def _build_summary(self, description: str, category: str) -> str:
@@ -157,6 +160,11 @@ class EmergencyFlowService:
 
     def _detect_missing_fields(self, location: str) -> list[str]:
         missing_fields: list[str] = []
+        if any(token in location for token in ["底商", "餐馆", "商铺"]):
+            if not any(token in location for token in ["号", "门牌", "餐馆", "店"]):
+                missing_fields.append("餐馆名称或门牌号")
+            return missing_fields
+
         location_tokens = ["栋", "单元", "楼", "层", "号"]
         if not any(token in location for token in location_tokens):
             missing_fields.append("楼栋或楼层信息")

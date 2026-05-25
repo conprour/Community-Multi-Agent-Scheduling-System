@@ -24,6 +24,16 @@ export interface SupplyNode {
 
 const demandCases: DemandCase[] = [
   {
+    id: 'restaurant-fume-noise',
+    title: '油烟噪声扰民',
+    brief: '底商餐馆油烟和夜间噪声影响居民，物业协调无效。',
+    source: '知春里社区居民',
+    location: '中关村街道知春里社区 A 区底商',
+    description: '我们小区楼下餐馆油烟太大，晚上还很吵，找物业没人管。',
+    tags: ['油烟扰民', '夜间噪声', '物业协调'],
+    supplyId: 'street-enforcement',
+  },
+  {
     id: 'water-pipe',
     title: '水管爆裂',
     brief: '楼道积水，可能影响电梯井和公共电路。',
@@ -66,6 +76,9 @@ const demandCases: DemandCase[] = [
 ];
 
 const supplyNodes: SupplyNode[] = [
+  { id: 'street-enforcement', title: '街道执法', unit: '属地街道综合执法队' },
+  { id: 'environment-office', title: '生态环境', unit: '生态环境部门' },
+  { id: 'market-office', title: '市场监管', unit: '市场监管所' },
   { id: 'repair-team', title: '维修组', unit: '物业工程维修组' },
   { id: 'electrician', title: '电工班', unit: '物业电工班' },
   { id: 'elevator-team', title: '电梯维保', unit: '电梯维保单位' },
@@ -89,6 +102,9 @@ function buildPayload(caseItem: DemandCase): EmergencyReportCreate {
 }
 
 function inferLocation(description: string, fallback: string) {
+  if (description.includes('油烟') || description.includes('餐馆') || description.includes('物业')) {
+    return fallback;
+  }
   const match = description.match(/[\u4e00-\u9fa5A-Za-z0-9#-]*\d+栋(?:\d+单元)?(?:\d+(?:楼|层))?(?:电梯口|楼道|门口|附近)?/);
   return match?.[0] ?? fallback;
 }
@@ -116,6 +132,9 @@ export const useEmergencyStore = defineStore('emergency', () => {
   const selectedCase = computed(() => demandCases.find((item) => item.id === selectedCaseId.value) ?? demandCases[0]);
   const hasPendingFiles = computed(() => pendingFiles.value.length > 0);
   const activeSupplyId = computed(() => {
+    if (response.value?.routing_decision.scenario_code === 'restaurant_fume_noise') {
+      return 'street-enforcement';
+    }
     if (response.value?.routing_decision.scenario_code === 'power_failure') {
       return 'electrician';
     }
@@ -128,13 +147,13 @@ export const useEmergencyStore = defineStore('emergency', () => {
 
   const stageLabel = computed(() => {
     if (flowStage.value === 'intake') {
-      return '诉求接受 Agent 正在分析';
+      return '正在受理并提取诉求要素';
     }
     if (flowStage.value === 'routing') {
-      return '诉求路由 Agent 正在匹配供给';
+      return '正在流转至政府侧工作台';
     }
     if (flowStage.value === 'completed') {
-      return '工单与服务信息已生成';
+      return '已提交，政府侧工单已更新';
     }
     return '等待输入或选择案例';
   });
@@ -149,7 +168,7 @@ export const useEmergencyStore = defineStore('emergency', () => {
     submitting.value = true;
     response.value = null;
     useMockData.value = false;
-    notice.value = '诉求接受 Agent 正在拆解问题、位置和风险。';
+    notice.value = '正在受理诉求，并提取问题、位置和风险。';
     flowStage.value = 'intake';
 
     let result: EmergencyFlowResponse;
@@ -212,7 +231,7 @@ export const useEmergencyStore = defineStore('emergency', () => {
     pendingFiles.value = files;
     if (files.length > 0) {
       form.input_type = inferInputType(files, form.input_type);
-      notice.value = `已选择 ${files.length} 个现场材料，点击发送后进入 Agent 分析。`;
+      notice.value = `已选择 ${files.length} 个现场材料，点击发送后进入诉求受理。`;
     }
   }
 

@@ -12,7 +12,7 @@
       <textarea
         v-model="store.form.description"
         class="chat-textarea"
-        placeholder="直接描述急事，例如：2栋3单元4楼水管爆了，地上全是水，怕漏到电梯里。"
+        placeholder="直接描述诉求，例如：我们小区楼下餐馆油烟太大，晚上还很吵，找物业没人管。"
       />
 
       <div v-if="store.pendingFiles.length" class="inline-files">
@@ -43,7 +43,7 @@
 
     <section class="agent-analysis">
       <div class="analysis-topline">
-        <span>诉求接受 Agent</span>
+        <span>受理反馈</span>
         <strong>{{ store.stageLabel }}</strong>
       </div>
       <p class="analysis-notice">{{ store.notice }}</p>
@@ -72,6 +72,7 @@
         <ul class="analysis-list">
           <li v-for="risk in store.response.demand_package.risks" :key="risk">{{ risk }}</li>
         </ul>
+        <RouterLink class="workbench-link" to="/government">查看政府工作台</RouterLink>
       </template>
 
       <template v-else>
@@ -409,6 +410,21 @@ onBeforeUnmount(() => {
   padding-left: 18px;
   color: rgba(52, 75, 87, 0.88);
   line-height: 1.8;
+}
+
+.workbench-link {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(135deg, #f28a45, #dc6730);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .case-preview {
