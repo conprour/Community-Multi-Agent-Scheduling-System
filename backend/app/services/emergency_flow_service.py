@@ -8,6 +8,7 @@ from app.core.settings import get_settings
 from app.integrations.bailian.client import BailianClient
 from app.repositories.file_store.json_file_repository import JsonFileRepository
 from app.schemas.emergency import (
+    ConfirmationIntentResponse,
     DemandPackage,
     EmergencyFlowResponse,
     EmergencyReportCreate,
@@ -30,6 +31,17 @@ class EmergencyFlowService:
         catalog = self._load_catalog()
         return len(catalog)
 
+    def detect_confirmation_intent(self, text: str) -> ConfirmationIntentResponse:
+        rule_result = self._detect_confirmation_by_rule(text)
+        if rule_result is not None:
+            return ConfirmationIntentResponse(confirmed=rule_result, confidence=0.96, source="rule")
+
+        model_result = self.bailian_client.classify_confirmation_intent(text)
+        if model_result is not None:
+            return ConfirmationIntentResponse(confirmed=model_result, confidence=0.82, source="model")
+
+        return ConfirmationIntentResponse(confirmed=False, confidence=0.0, source="fallback")
+
     def handle_report(self, payload: EmergencyReportCreate, persist: bool = True) -> EmergencyFlowResponse:
         created_at = datetime.now()
         request_id = f"req-{created_at.strftime('%Y%m%d%H%M%S')}-{uuid4().hex[:6]}"
@@ -38,6 +50,7 @@ class EmergencyFlowService:
         if not effective_description:
             effective_description = "用户通过对话框提交了图片或语音材料，需结合附件判断急事类型。"
         resolved_location = self._resolve_location(payload.location, effective_description)
+        community_name = payload.community_name or self._infer_community_name(resolved_location)
         scenario_code = self._detect_scenario(
             effective_description,
             payload.tags,
@@ -45,12 +58,14 @@ class EmergencyFlowService:
         )
         scenario = self._load_catalog().get(scenario_code) or self._load_catalog()["generic_emergency"]
         summary = ai_insight.summary if ai_insight and ai_insight.summary else self._build_summary(effective_description, scenario["category"])
+        summary = self._with_community(summary, community_name)
         category = ai_insight.category if ai_insight and ai_insight.category else scenario["category"]
         urgency = ai_insight.urgency if ai_insight and ai_insight.urgency else scenario["urgency"]
         impact_scope = (
             ai_insight.impact_scope if ai_insight and ai_insight.impact_scope else scenario["impact_scope"]
         )
         risks = ai_insight.risks if ai_insight and ai_insight.risks else scenario["risks"]
+        risks = self._with_community_list(risks, community_name)
         requires_immediate_visit = (
             ai_insight.requires_immediate_visit
             if ai_insight and ai_insight.requires_immediate_visit is not None
@@ -61,11 +76,13 @@ class EmergencyFlowService:
             if ai_insight and ai_insight.suggested_questions
             else scenario["suggested_questions"]
         )
+        suggested_questions = self._with_community_list(suggested_questions, community_name)
         temporary_guidance = (
             ai_insight.temporary_guidance
             if ai_insight and ai_insight.temporary_guidance
             else scenario["temporary_guidance"]
         )
+        temporary_guidance = self._with_community_list(temporary_guidance, community_name)
 
         demand_package = DemandPackage(
             summary=summary,
@@ -81,24 +98,24 @@ class EmergencyFlowService:
         )
 
         routing = scenario["routing"]
-        rationale = list(routing["rationale"])
+        rationale = self._with_community_list(routing["rationale"], community_name)
         if ai_insight and ai_insight.route_hint:
-            rationale.insert(0, f"百炼辅助判断：{ai_insight.route_hint}")
+            rationale.insert(0, self._with_community(f"百炼辅助判断：{ai_insight.route_hint}", community_name))
         routing_decision = RoutingDecision(
             scenario_code=scenario_code,
-            responsible_unit=routing["responsible_unit"],
+            responsible_unit=self._with_community(routing["responsible_unit"], community_name),
             responsible_role=routing["responsible_role"],
-            backup_units=routing["backup_units"],
+            backup_units=self._with_community_list(routing["backup_units"], community_name),
             eta_minutes=routing["eta_minutes"],
             service_sla=routing["service_sla"],
             rationale=rationale,
         )
 
         order_id = f"order-{created_at.strftime('%Y%m%d%H%M%S')}-{uuid4().hex[:6]}"
-        notes = list(scenario["service_order"]["notes"])
+        notes = self._with_community_list(scenario["service_order"]["notes"], community_name)
         if ai_insight:
             notes.insert(0, f"百炼增强已启用：{self.settings.bailian_vlm_model}")
-            notes.extend(ai_insight.service_notes)
+            notes.extend(self._with_community_list(ai_insight.service_notes, community_name))
             if ai_insight.transcript:
                 transcript_preview = ai_insight.transcript[:48]
                 notes.append(f"语音转写摘要：{transcript_preview}")
@@ -106,7 +123,7 @@ class EmergencyFlowService:
             order_id=order_id,
             status="待派发",
             service_location=resolved_location,
-            service_actions=scenario["service_order"]["service_actions"],
+            service_actions=self._with_community_list(scenario["service_order"]["service_actions"], community_name),
             notes=notes,
         )
 
@@ -147,6 +164,40 @@ class EmergencyFlowService:
         if len(short_description) > 36:
             short_description = f"{short_description[:36]}..."
         return f"已识别为{category}，核心描述：{short_description}"
+
+    def _detect_confirmation_by_rule(self, text: str) -> bool | None:
+        normalized = re.sub(r"[\s，。！？!?,.；;：:、]+", "", text.strip())
+        if not normalized:
+            return False
+
+        if any(token in normalized for token in ["不确认", "不是", "不用", "取消", "等等", "重新", "修改", "补充", "先别", "有误", "错了"]):
+            return False
+
+        if re.fullmatch(r"(我)?(确认|确定|同意|认可|接受)(了|啦|的)?", normalized):
+            return True
+        if re.fullmatch(r"(是|是的|对|对的|好的|可以|没问题|继续|提交|确认提交)", normalized):
+            return True
+        if "确认" in normalized and any(token in normalized for token in ["我", "可以", "已经", "就这样", "信息", "工单"]):
+            return True
+
+        return None
+
+    def _infer_community_name(self, location: str) -> str:
+        if "社区" in location:
+            match = re.search(r"[\u4e00-\u9fa5A-Za-z0-9\s]+社区(?:\s?[A-Z]\s?区)?", location)
+            if match:
+                return match.group(0).strip()
+        if "小区" in location:
+            match = re.search(r"[\u4e00-\u9fa5A-Za-z0-9\s]+小区", location)
+            if match:
+                return match.group(0).strip()
+        return "本小区"
+
+    def _with_community(self, text: str, community_name: str) -> str:
+        return text.replace("XX小区", community_name)
+
+    def _with_community_list(self, items: list[str], community_name: str) -> list[str]:
+        return [self._with_community(item, community_name) for item in items]
 
     def _resolve_location(self, location: str, description: str) -> str:
         if any(token in f"{location} {description}" for token in ["底商", "餐馆", "餐厅", "饭店", "商铺", "油烟", "噪声"]):

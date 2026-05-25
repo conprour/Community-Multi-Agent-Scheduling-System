@@ -47,13 +47,69 @@ class BailianClient:
 
         return insight
 
+    def classify_confirmation_intent(self, text: str) -> bool | None:
+        if not self.is_configured():
+            return None
+
+        prompt = text.strip()
+        if not prompt:
+            return None
+
+        headers = {
+            "Authorization": f"Bearer {self.settings.bailian_api_key}",
+            "Content-Type": "application/json",
+        }
+        body = {
+            "model": self.settings.bailian_intent_model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "你只判断居民这句话是否是在确认客服刚才复述的诉求。"
+                        "只输出 JSON：{\"confirmed\": true} 或 {\"confirmed\": false}。"
+                        "如果用户是在补充、否认、修改、取消或表达不确定，confirmed 必须为 false。"
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0,
+            "max_tokens": 24,
+        }
+
+        try:
+            with httpx.Client(timeout=4.0) as client:
+                response = client.post(
+                    f"{self.settings.bailian_base_url}/chat/completions",
+                    headers=headers,
+                    json=body,
+                )
+                response.raise_for_status()
+                payload_data = response.json()
+        except Exception:
+            return None
+
+        raw_content = self._extract_message_text(payload_data)
+        parsed = self._parse_json_content(raw_content)
+        if isinstance(parsed, dict) and isinstance(parsed.get("confirmed"), bool):
+            return parsed["confirmed"]
+
+        normalized = raw_content.strip().lower()
+        if "true" in normalized:
+            return True
+        if "false" in normalized:
+            return False
+        return None
+
     def _call_vlm(
         self,
         payload: EmergencyReportCreate,
         effective_description: str,
     ) -> BailianEmergencyInsight | None:
+        community_name = payload.community_name or "未提供"
         system_prompt = (
             "你是面向社区接诉即办与 12345 的民生诉求受理 Agent。"
+            f"当前诉求人姓名是{payload.reporter_name}，所在小区是{community_name}。"
+            "如需提及小区，必须使用这个具体小区名称，不要使用“XX小区”等占位写法。"
             "请根据用户输入和现场图片，输出一个 JSON 对象，不要输出 Markdown。"
             "JSON 字段必须包含：summary, category, urgency, impact_scope, risks, "
             "requires_immediate_visit, suggested_questions, temporary_guidance, route_hint, service_notes。"
@@ -100,6 +156,7 @@ class BailianClient:
         prompt = "\n".join(
             [
                 f"诉求人：{payload.reporter_name}",
+                f"所在小区：{payload.community_name or '未提供'}",
                 f"联系方式：{payload.contact or '未提供'}",
                 f"发生位置：{payload.location}",
                 f"输入方式：{payload.input_type}",

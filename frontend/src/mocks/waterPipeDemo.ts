@@ -3,6 +3,7 @@ import type { EmergencyFlowResponse, EmergencyReportCreate } from '@/types/emerg
 export function createWaterPipeDemoPayload(): EmergencyReportCreate {
   return {
     reporter_name: '李女士',
+    community_name: '知春里社区 A 区',
     contact: '13800000000',
     location: '中关村街道知春里社区 A 区底商',
     description: '我们小区楼下餐馆油烟太大，晚上还很吵，找物业没人管。',
@@ -16,6 +17,7 @@ export function buildMockResponse(payload: EmergencyReportCreate): EmergencyFlow
   const now = new Date();
   const stamp = now.toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
   const missingFields = detectMockMissingFields(payload);
+  const communityName = payload.community_name || '本小区';
 
   return {
     request_id: `req-${stamp}-mock01`,
@@ -34,7 +36,7 @@ export function buildMockResponse(payload: EmergencyReportCreate): EmergencyFlow
     },
     routing_decision: {
       scenario_code: 'restaurant_fume_noise',
-      responsible_unit: '属地街道综合执法队',
+      responsible_unit: `${communityName}属地街道综合执法队`,
       responsible_role: '接诉即办调度员',
       backup_units: ['生态环境部门', '市场监管所', '知春里社区居委会', '物业公司'],
       eta_minutes: 120,

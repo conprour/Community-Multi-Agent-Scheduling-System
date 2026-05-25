@@ -3,24 +3,15 @@
     <section class="page-hero government-hero">
       <div>
         <p class="eyebrow">政府 / 部门工作台</p>
-        <h1>工单派发与治理汇总</h1>
+        <h1>治理汇总与部门态势</h1>
         <p>
-          面向街道、社区和承办部门，集中查看标准工单、主协办建议、人工确认提示和部门数据看板。
+          面向街道、社区和承办部门，集中查看部门负载、重复投诉、超时预警和治理建议。
         </p>
       </div>
       <RouterLink class="nav-link" to="/">群众提交端</RouterLink>
     </section>
 
-    <section v-if="store.workOrderUpdated" class="work-order-reminder">
-      <div>
-        <span>新工单已同步</span>
-        <strong>{{ store.response?.service_order.order_id }}</strong>
-      </div>
-      <p>{{ store.response?.routing_decision.responsible_unit }} 需确认派单与协办部门。</p>
-    </section>
-
     <section class="government-grid">
-      <RightServicePanel />
       <section class="department-summary card-panel">
         <p class="eyebrow">部门处置摘要</p>
         <h2>{{ summaryTitle }}</h2>
@@ -39,38 +30,37 @@
 import { computed } from 'vue';
 
 import GovernmentInsightPanel from '@/components/GovernmentInsightPanel.vue';
-import RightServicePanel from '@/components/RightServicePanel.vue';
 import { useEmergencyStore } from '@/stores/emergency';
 
 const store = useEmergencyStore();
 
 const summaryTitle = computed(() => {
   if (!store.response) {
-    return '等待群众端提交诉求';
+    return '等待群众端确认诉求';
   }
-  return `${store.response.routing_decision.responsible_unit} 待确认`;
+  return `${store.response.demand_package.category} 已进入治理汇总`;
 });
 
 const summaryText = computed(() => {
   if (!store.response) {
-    return '当前展示政府部门侧的合成看板数据。群众端确认后，标准工单、协办部门和人工确认提示会同步出现在这里。';
+    return '当前展示政府部门侧的合成看板数据。群众端确认工单后，可在这里看到治理态势的联动摘要。';
   }
-  return `系统已生成 ${store.response.service_order.order_id}，建议由坐席补齐缺失字段后再进入正式派单。`;
+  return `群众端已确认“${store.response.demand_package.category}”诉求，部门侧只展示治理聚类、负载和风险摘要。`;
 });
 
 const summaryItems = computed(() => {
   if (!store.response) {
     return [
       '群众提交端与政府处理端已拆分。',
-      '工单、派单理由和治理汇总仅在政府工作台展示。',
+      '工单派发和用户确认保留在群众提交端右侧。',
       'multi-agent 协作层保留在后台链路，当前不作为页面模块展示。',
     ];
   }
 
   return [
-    `主办部门：${store.response.routing_decision.responsible_unit}`,
-    `协办部门：${store.response.routing_decision.backup_units.join('、')}`,
-    `人工确认提示：${store.response.demand_package.missing_fields.join('、') || '已由群众确认'}`,
+    `关联小区：${store.selectedCase.communityName}`,
+    `诉求类型：${store.response.demand_package.category}`,
+    `治理提示：${store.response.demand_package.risks[0] || '暂无新增风险'}`,
   ];
 });
 </script>
@@ -78,42 +68,9 @@ const summaryItems = computed(() => {
 <style scoped>
 .government-grid {
   display: grid;
-  grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1.1fr);
+  grid-template-columns: minmax(520px, 1fr);
   gap: 20px;
   align-items: start;
-}
-
-.work-order-reminder {
-  display: flex;
-  justify-content: space-between;
-  gap: 18px;
-  align-items: center;
-  margin-bottom: 20px;
-  padding: 16px 20px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, rgba(255, 226, 205, 0.96), rgba(237, 249, 250, 0.96));
-  border: 1px solid rgba(235, 127, 56, 0.42);
-  box-shadow: 0 16px 30px rgba(235, 127, 56, 0.12);
-}
-
-.work-order-reminder div {
-  display: grid;
-  gap: 4px;
-}
-
-.work-order-reminder span {
-  color: #d56722;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.work-order-reminder strong {
-  color: #17313d;
-}
-
-.work-order-reminder p {
-  margin: 0;
-  color: rgba(52, 75, 87, 0.86);
 }
 
 .department-summary {
@@ -151,9 +108,5 @@ const summaryItems = computed(() => {
     grid-template-columns: 1fr;
   }
 
-  .work-order-reminder {
-    align-items: start;
-    flex-direction: column;
-  }
 }
 </style>
