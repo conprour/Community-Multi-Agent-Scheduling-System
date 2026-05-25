@@ -1,0 +1,34 @@
+{
+  "order_id": "order-20260525105232-ad6116",
+  "request_id": "req-20260525105232-ffb01c",
+  "service_order": {
+    "order_id": "order-20260525105232-ad6116",
+    "status": "待派发",
+    "service_location": "2栋3单元4楼电梯口",
+    "service_actions": [
+      "到场后先检查主阀或分支阀门。",
+      "确认漏水点是否属于公共管道。",
+      "必要时设置警示区域，避免居民靠近积水带。"
+    ],
+    "notes": [
+      "若发现渗入电梯井，立即升级为协同处理。",
+      "若涉及住户室内自有设施损坏，现场明确责任边界。"
+    ]
+  },
+  "routing_decision": {
+    "scenario_code": "water_pipe_burst",
+    "responsible_unit": "XX小区物业工程维修组",
+    "responsible_role": "值班维修员",
+    "backup_units": [
+      "社区值班人员",
+      "电工待命"
+    ],
+    "eta_minutes": 20,
+    "service_sla": "20 分钟内到场",
+    "rationale": [
+      "问题属于楼栋公共区域的给排水故障。",
+      "存在积水扩散风险，需要优先派发给值班维修组。",
+      "若现场靠近电梯井或电路区域，需同步通知电工待命。"
+    ]
+  }
+}
