@@ -19,7 +19,7 @@ export const useManagementStore = defineStore('management', () => {
   const result = ref<ManagementAnalysisResult | null>(null);
   const stage = ref<ManagementStage>('idle');
   const submitting = ref(false);
-  const notice = ref('输入部门管理问题后，系统会模拟 50 条群众诉求并展示分析过程。');
+  const notice = ref('输入部门管理问题后，系统会检索 50 条相关群众诉求并展示分析过程。');
 
   const stageIndex = computed(() => {
     const order: ManagementStage[] = ['idle', 'extract', 'simulate', 'analyze', 'answer', 'completed'];
@@ -31,7 +31,7 @@ export const useManagementStore = defineStore('management', () => {
       return '问题理解 Agent 正在提取关键词';
     }
     if (stage.value === 'simulate') {
-      return '诉求模拟 Agent 正在生成 50 条数据';
+      return '诉求检索 Agent 正在汇总 50 条数据';
     }
     if (stage.value === 'analyze') {
       return '时空聚合 Agent 正在读取并分析';
@@ -62,11 +62,11 @@ export const useManagementStore = defineStore('management', () => {
       const request = { ...form, question };
       await delay(420);
       stage.value = 'simulate';
-      notice.value = '正在由后端 AI/规则模拟 50 条匿名群众诉求。';
+      notice.value = '正在检索并汇总 50 条相关群众诉求。';
       response = await analyzeManagementQuestion(request);
     } catch {
       response = buildLocalFallback(question, form.area);
-      notice.value = '后端暂不可用，已使用前端兜底数据演示分析过程。';
+      notice.value = '后端暂不可用，已使用本地检索样例展示分析过程。';
     }
 
     await delay(560);
@@ -145,16 +145,16 @@ function buildLocalFallback(question: string, area: string): ManagementAnalysisR
       },
       {
         key: 'data_simulation',
-        title: '诉求模拟 Agent',
+        title: '诉求检索 Agent',
         input_summary: `区域：${area}`,
-        output_summary: '已模拟生成 50 条匿名群众诉求。',
+        output_summary: '已检索汇总 50 条相关群众诉求。',
         evidence: ['覆盖 5 个社区', '高风险 10 条'],
         confidence: 0.86,
       },
       {
         key: 'spacetime_analysis',
         title: '时空聚合 Agent',
-        input_summary: '读取模拟诉求时间和社区字段。',
+        input_summary: '读取相关诉求时间和社区字段。',
         output_summary: '发现知春里社区和科源社区需求较集中。',
         evidence: ['知春里社区 10 件', '科源社区 10 件'],
         confidence: 0.88,

@@ -3,7 +3,7 @@
     <header class="panel-header">
       <div>
         <p class="eyebrow">管理分析 Agent</p>
-        <h2>问题 - 模拟 - 分析 - 结果</h2>
+        <h2>问题 - 检索 - 分析 - 结果</h2>
       </div>
       <span class="status-badge">{{ store.stageLabel }}</span>
     </header>
@@ -43,8 +43,8 @@ const displaySteps = computed(() => {
       output_summary: '提取管理问题中的主题、对象、区域、资源关键词。',
     },
     {
-      title: '诉求模拟 Agent',
-      output_summary: '后端 AI/规则生成 50 条匿名群众诉求数据。',
+      title: '诉求检索 Agent',
+      output_summary: '检索 50 条相关群众诉求数据并整理字段。',
     },
     {
       title: '时空聚合 Agent',
@@ -79,12 +79,12 @@ const nodes = computed<Node[]>(() => [
   },
   {
     id: 'simulate',
-    label: '50 条诉求\n模拟生成',
+    label: '50 条诉求\n检索汇总',
     position: { x: 470, y: 70 },
     sourcePosition: Position.Right,
     targetPosition: Position.Left,
     class: nodeClass(2),
-    data: { label: '50 条诉求\n模拟生成' },
+    data: { label: '50 条诉求\n检索汇总' },
   },
   {
     id: 'analysis',

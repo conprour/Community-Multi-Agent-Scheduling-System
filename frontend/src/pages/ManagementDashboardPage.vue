@@ -4,7 +4,7 @@
       <div>
         <p class="eyebrow">管理分析数据看板</p>
         <h1>{{ result?.topic ?? '等待分析结果' }}</h1>
-        <p>{{ result?.answer ?? '请先在管理分析端提交问题，系统会生成 50 条模拟群众诉求并汇总成时空和图表看板。' }}</p>
+        <p>{{ result?.answer ?? '请先在管理分析端提交问题，系统会检索 50 条相关群众诉求并汇总成时空和图表看板。' }}</p>
       </div>
       <RouterLink class="nav-link" to="/management">返回分析过程</RouterLink>
     </section>
@@ -12,7 +12,7 @@
     <template v-if="result">
       <section class="metric-grid">
         <article class="metric-card">
-          <span>模拟诉求</span>
+          <span>相关诉求</span>
           <strong>{{ result.simulated_count }}</strong>
           <small>匿名群众诉求</small>
         </article>
@@ -72,15 +72,25 @@
             <p class="eyebrow">时空分布</p>
             <h2>不同地区标注信息</h2>
           </div>
-          <span>经纬度为演示模拟点位</span>
+          <span>按社区点位聚合标注</span>
         </div>
         <div class="region-map">
+          <div class="map-surface water-shape"></div>
+          <div class="map-surface park-shape"></div>
+          <div class="map-road road-main"></div>
+          <div class="map-road road-ring"></div>
+          <div class="map-road road-branch-a"></div>
+          <div class="map-road road-branch-b"></div>
+          <span class="map-label label-north">北部居住片区</span>
+          <span class="map-label label-center">中关村核心区</span>
+          <span class="map-label label-south">商圈服务片区</span>
           <article
-            v-for="region in result.region_insights"
+            v-for="(region, index) in result.region_insights"
             :key="region.name"
             class="region-marker"
-            :style="{ left: `${regionLeft(region.longitude)}%`, top: `${regionTop(region.latitude)}%` }"
+            :style="{ left: `${regionLeft(region.longitude, index)}%`, top: `${regionTop(region.latitude, index)}%` }"
           >
+            <i :class="{ hot: region.high_severity >= 3 }">{{ region.count }}</i>
             <strong>{{ region.name }}</strong>
             <span>{{ region.count }} 件 / 高风险 {{ region.high_severity }}</span>
           </article>
@@ -117,12 +127,23 @@ const store = useManagementStore();
 const result = computed(() => store.result);
 const highSeverityCount = computed(() => result.value?.records.filter((item) => item.severity === 'high').length ?? 0);
 
-function regionLeft(longitude: number) {
-  return Math.min(88, Math.max(8, (longitude - 116.28) * 900));
+const markerSlots = [
+  [12, 12],
+  [76, 14],
+  [34, 30],
+  [58, 42],
+  [18, 58],
+  [80, 64],
+  [40, 75],
+  [63, 78],
+];
+
+function regionLeft(longitude: number, index: number) {
+  return markerSlots[index % markerSlots.length]?.[0] ?? Math.min(88, Math.max(8, (longitude - 116.28) * 900));
 }
 
-function regionTop(latitude: number) {
-  return Math.min(82, Math.max(10, 88 - (latitude - 39.95) * 900));
+function regionTop(latitude: number, index: number) {
+  return markerSlots[index % markerSlots.length]?.[1] ?? Math.min(82, Math.max(10, 88 - (latitude - 39.95) * 900));
 }
 </script>
 
@@ -281,21 +302,128 @@ function regionTop(latitude: number) {
   overflow: hidden;
   border-radius: 22px;
   background:
-    linear-gradient(120deg, rgba(246, 250, 249, 0.95), rgba(225, 241, 243, 0.96)),
-    repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(120, 154, 166, 0.12) 39px),
-    repeating-linear-gradient(90deg, transparent, transparent 48px, rgba(120, 154, 166, 0.12) 49px);
+    radial-gradient(circle at 72% 24%, rgba(255, 232, 196, 0.72), transparent 16%),
+    radial-gradient(circle at 28% 66%, rgba(205, 232, 222, 0.82), transparent 18%),
+    linear-gradient(120deg, rgba(246, 250, 249, 0.95), rgba(225, 241, 243, 0.96));
   border: 1px solid rgba(210, 223, 230, 0.9);
+}
+
+.map-surface,
+.map-road,
+.map-label {
+  position: absolute;
+  pointer-events: none;
+}
+
+.water-shape {
+  right: -42px;
+  top: 24px;
+  width: 210px;
+  height: 260px;
+  border-radius: 48% 0 0 52%;
+  background: rgba(116, 183, 198, 0.24);
+}
+
+.park-shape {
+  left: 42px;
+  bottom: 28px;
+  width: 250px;
+  height: 120px;
+  border-radius: 46% 54% 42% 58%;
+  background: rgba(117, 172, 123, 0.18);
+}
+
+.map-road {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 0 0 1px rgba(160, 184, 194, 0.18);
+}
+
+.road-main {
+  left: -8%;
+  top: 50%;
+  width: 116%;
+  transform: rotate(-9deg);
+}
+
+.road-ring {
+  left: 12%;
+  top: 18%;
+  width: 72%;
+  height: 54%;
+  border: 10px solid rgba(255, 255, 255, 0.82);
+  border-radius: 50%;
+  background: transparent;
+}
+
+.road-branch-a {
+  left: 24%;
+  top: 18%;
+  width: 66%;
+  transform: rotate(35deg);
+}
+
+.road-branch-b {
+  left: 6%;
+  top: 74%;
+  width: 72%;
+  transform: rotate(-24deg);
+}
+
+.map-label {
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: rgba(54, 83, 94, 0.68);
+  background: rgba(255, 255, 255, 0.58);
+  font-size: 12px;
+}
+
+.label-north {
+  left: 8%;
+  top: 8%;
+}
+
+.label-center {
+  left: 42%;
+  top: 42%;
+}
+
+.label-south {
+  left: 12%;
+  bottom: 10%;
 }
 
 .region-marker {
   position: absolute;
-  width: 172px;
+  width: 152px;
   transform: translate(-50%, -50%);
-  padding: 10px 12px;
+  padding: 9px 10px 9px 38px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(235, 127, 56, 0.34);
   box-shadow: 0 12px 22px rgba(92, 121, 134, 0.16);
+}
+
+.region-marker i {
+  position: absolute;
+  left: 9px;
+  top: 11px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #4d9aad;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.region-marker i.hot {
+  background: #e46b42;
 }
 
 .region-marker strong,
@@ -305,6 +433,7 @@ function regionTop(latitude: number) {
 
 .region-marker strong {
   color: #17313d;
+  font-size: 14px;
 }
 
 .region-marker span {

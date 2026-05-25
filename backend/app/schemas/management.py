@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 class ManagementQueryCreate(BaseModel):
     question: str = Field(..., min_length=4, description="部门管理人员提出的公共服务分析问题")
     area: str = Field(default="中关村街道", description="分析区域")
-    horizon_days: int = Field(default=14, ge=1, le=90, description="模拟和分析的时间范围")
+    horizon_days: int = Field(default=14, ge=1, le=90, description="检索和分析的时间范围")
 
 
 class SimulatedAppeal(BaseModel):

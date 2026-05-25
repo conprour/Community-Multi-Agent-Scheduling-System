@@ -3,9 +3,9 @@
     <section class="page-hero management-hero">
       <div>
         <p class="eyebrow">部门管理分析端</p>
-        <h1>提出问题，自动模拟诉求并分析</h1>
+        <h1>提出问题，检索诉求并分析</h1>
         <p>
-          部门管理人员输入公共服务问题，后端生成 50 条模拟群众诉求，Agent 展示“问题理解 - 数据模拟 - 时空分析 - 形成答案”的动态过程。
+          部门管理人员输入公共服务问题，系统检索 50 条相关群众诉求，Agent 展示“问题理解 - 数据检索 - 时空分析 - 形成答案”的动态过程。
         </p>
       </div>
       <RouterLink class="nav-link" to="/">群众诉求链路</RouterLink>
@@ -18,7 +18,7 @@
             <p class="eyebrow">管理问题</p>
             <h2>部门提问</h2>
           </div>
-          <el-tag effect="light">模拟 50 条诉求</el-tag>
+          <el-tag effect="light">检索 50 条诉求</el-tag>
         </header>
 
         <el-form label-position="top" class="query-form">

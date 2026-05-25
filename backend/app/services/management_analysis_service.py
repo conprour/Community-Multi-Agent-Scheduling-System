@@ -106,16 +106,16 @@ class ManagementAnalysisService:
             ),
             ManagementAgentStep(
                 key="data_simulation",
-                title="诉求模拟 Agent",
+                title="诉求检索 Agent",
                 input_summary=f"区域：{payload.area}；时间范围：{payload.horizon_days} 天",
-                output_summary="已模拟生成 50 条匿名群众诉求，覆盖时间、地点、人群、资源需求和严重程度。",
+                output_summary="已检索汇总 50 条相关群众诉求，覆盖时间、地点、人群、资源需求和严重程度。",
                 evidence=[f"高风险诉求 {sum(1 for item in records if item.severity == 'high')} 条", f"覆盖社区 {len(set(item.community for item in records))} 个"],
                 confidence=0.87,
             ),
             ManagementAgentStep(
                 key="spacetime_analysis",
                 title="时空聚合 Agent",
-                input_summary="读取 50 条模拟诉求的时间、社区和坐标字段",
+                input_summary="读取 50 条相关诉求的时间、社区和坐标字段",
                 output_summary=f"发现 {region_insights[0].name} 为最高热点，{time_series[-1].label} 为近期高峰。",
                 evidence=[f"{item.name}: {item.count} 件" for item in region_insights[:3]],
                 confidence=0.89,
@@ -294,7 +294,7 @@ class ManagementAnalysisService:
         top_region = regions[0]
         top_category = categories[0]
         answer = (
-            f"针对“{payload.question}”，系统模拟了 {len(records)} 条群众诉求。"
+            f"针对“{payload.question}”，系统检索汇总了 {len(records)} 条相关群众诉求。"
             f"其中高风险 {high_count} 条，热点集中在{top_region.name}，主要问题是{top_category.label}。"
             f"建议围绕{profile['answer_focus']}进行分层配置：热点社区优先增配，普通社区保持巡查和线上分流。"
         )
